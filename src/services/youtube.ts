@@ -1,5 +1,6 @@
 import { TranscriptSegment, VideoMetadata, YouTubeData } from '../models/types';
 import { YoutubeTranscript } from 'youtube-transcript';
+import ytdl from '@distube/ytdl-core';
 
 export class YouTubeService {
   /**
@@ -79,5 +80,49 @@ export class YouTubeService {
     }
 
     return `${min}:${sec}`;
+  }
+
+  /**
+   * Fetch video metadata
+   */
+  async fetchMetadata(videoId: string): Promise<VideoMetadata> {
+    try {
+      const url = `https://www.youtube.com/watch?v=${videoId}`;
+      const info = await ytdl.getInfo(url);
+
+      const videoDetails = info.videoDetails;
+
+      return {
+        title: videoDetails.title,
+        url: url,
+        videoId: videoId,
+        channel: videoDetails.author.name,
+        uploadDate: videoDetails.publishDate,
+        duration: this.formatDuration(parseInt(videoDetails.lengthSeconds)),
+        viewCount: parseInt(videoDetails.viewCount),
+        description: videoDetails.description || '',
+        channelUrl: videoDetails.author.channel_url,
+        thumbnailUrl: videoDetails.thumbnails[0]?.url || ''
+      };
+    } catch (error) {
+      throw new Error(`Failed to fetch metadata: ${error.message}`);
+    }
+  }
+
+  /**
+   * Format duration from seconds to readable format
+   */
+  private formatDuration(seconds: number): string {
+    const hours = Math.floor(seconds / 3600);
+    const minutes = Math.floor((seconds % 3600) / 60);
+    const secs = seconds % 60;
+
+    if (hours > 0) {
+      return `${hours}h ${minutes}m ${secs}s`;
+    } else if (minutes > 0) {
+      return `${minutes}m ${secs}s`;
+    } else {
+      return `${secs}s`;
+    }
   }
 }
