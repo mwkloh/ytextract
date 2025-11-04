@@ -140,3 +140,68 @@ export class OllamaProvider extends BaseLLMProvider {
     return prompt;
   }
 }
+
+export class LMStudioProvider extends BaseLLMProvider {
+  name = 'LM Studio';
+  defaultEndpoint = 'http://localhost:1234/v1/chat/completions';
+
+  async testConnection(): Promise<boolean> {
+    try {
+      const response = await this.fetchWithTimeout(
+        this.defaultEndpoint.replace('/v1/chat/completions', '/v1/models'),
+        { method: 'GET' },
+        5000
+      );
+      return response.ok;
+    } catch {
+      return false;
+    }
+  }
+
+  async generateSummary(transcript: string, prompt: string): Promise<LLMResponse> {
+    const endpoint = this.settings.autoDetectEndpoint
+      ? this.defaultEndpoint
+      : this.settings.llmEndpoint;
+
+    const requestBody = {
+      model: this.settings.llmModel,
+      messages: [
+        { role: 'system', content: prompt },
+        { role: 'user', content: this.buildUserPrompt(transcript) }
+      ],
+      temperature: 0.7
+    };
+
+    try {
+      const response = await this.fetchWithTimeout(
+        endpoint,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(requestBody)
+        },
+        this.settings.requestTimeout
+      );
+
+      if (!response.ok) {
+        throw new Error(`LM Studio request failed: ${response.statusText}`);
+      }
+
+      const data = await response.json();
+      const content = data.choices[0].message.content;
+      return this.parseLLMOutput(content);
+    } catch (error) {
+      throw new Error(`LM Studio generation failed: ${error.message}`);
+    }
+  }
+
+  private buildUserPrompt(transcript: string): string {
+    const outputs = [];
+    if (this.settings.outputSummary) outputs.push('summary');
+    if (this.settings.outputKeyPoints) outputs.push('key points');
+    if (this.settings.outputTags) outputs.push('tags');
+    if (this.settings.outputQuestions) outputs.push('questions');
+
+    return `Transcript:\n${transcript}\n\nPlease provide: ${outputs.join(', ')}`;
+  }
+}
