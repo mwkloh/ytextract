@@ -3,6 +3,7 @@ import YTExtractPlugin from '../main';
 
 export class YTExtractSettingTab extends PluginSettingTab {
   plugin: YTExtractPlugin;
+  private templateFilename: string = '';
 
   constructor(app: App, plugin: YTExtractPlugin) {
     super(app, plugin);
@@ -146,7 +147,10 @@ export class YTExtractSettingTab extends PluginSettingTab {
       .setDesc('Enter template filename (without .md)')
       .addText(text => text
         .setPlaceholder('youtube-template')
-        .setValue('')
+        .setValue(this.templateFilename)
+        .onChange((value) => {
+          this.templateFilename = value;
+        })
       );
 
     new Setting(containerEl)
@@ -210,8 +214,34 @@ export class YTExtractSettingTab extends PluginSettingTab {
         .setButtonText('Generate Template')
         .setCta()
         .onClick(async () => {
-          // TODO: Implement template generation
-          new Notice('Template generation coming soon');
+          // Validate filename
+          if (!this.validateFilename(this.templateFilename)) {
+            return;
+          }
+
+          // Sanitize filename
+          const sanitizedFilename = this.sanitizeFilename(this.templateFilename);
+
+          // Generate template content
+          const templateContent = this.generateTemplateContent();
+
+          try {
+            // Create template file
+            const filePath = await this.createTemplateFile(sanitizedFilename, templateContent);
+
+            // Update settings with new template path
+            this.plugin.settings.templatePath = filePath;
+            await this.plugin.saveSettings();
+
+            // Refresh display to show updated template path
+            this.display();
+
+            // Show success message
+            new Notice(`Template created at ${filePath}. Now using this template for extractions.`);
+          } catch (error) {
+            console.error('Failed to create template:', error);
+            new Notice('Failed to create template file. Check console for details.');
+          }
         }));
   }
 
