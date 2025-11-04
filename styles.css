@@ -1,0 +1,12 @@
+.modal-button-container {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 20px;
+}
+
+.modal-button-container button {
+  padding: 6px 16px;
+  border-radius: 4px;
+  cursor: pointer;
+}
