@@ -27,6 +27,16 @@ export interface YTExtractSettings {
 
   // Error Handling
   errorBehavior: 'stop' | 'partial' | 'skip';
+
+  // Template Generator
+  templateGeneratorSections: {
+    includeSummary: boolean;
+    includeKeyPoints: boolean;
+    includeTags: boolean;
+    includeQuestions: boolean;
+    includePersonalNotes: boolean;
+    includeTranscript: boolean;
+  };
 }
 
 export const DEFAULT_SETTINGS: YTExtractSettings = {
@@ -53,7 +63,16 @@ export const DEFAULT_SETTINGS: YTExtractSettings = {
   outputQuestions: false,
   requestTimeout: 30000,
 
-  errorBehavior: 'skip'
+  errorBehavior: 'skip',
+
+  templateGeneratorSections: {
+    includeSummary: true,
+    includeKeyPoints: true,
+    includeTags: true,
+    includeQuestions: false,
+    includePersonalNotes: true,
+    includeTranscript: true
+  }
 };
 
 export interface VideoMetadata {
