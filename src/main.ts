@@ -29,8 +29,37 @@ export default class YTExtractPlugin extends Plugin {
       this.openURLModal();
     });
 
+    // Add editor context menu
+    this.registerEvent(
+      this.app.workspace.on('editor-menu', (menu, editor) => {
+        const selection = editor.getSelection();
+        if (this.looksLikeYouTubeURL(selection)) {
+          menu.addItem((item) => {
+            item
+              .setTitle('Extract YouTube Video')
+              .setIcon('youtube')
+              .onClick(() => {
+                this.openURLModal(selection);
+              });
+          });
+        }
+      })
+    );
+
     // Add settings tab
     this.addSettingTab(new YTExtractSettingTab(this.app, this));
+  }
+
+  looksLikeYouTubeURL(text: string): boolean {
+    if (!text || text.trim().length === 0) {
+      return false;
+    }
+    const trimmed = text.trim();
+    return (
+      trimmed.includes('youtube.com') ||
+      trimmed.includes('youtu.be') ||
+      /^[a-zA-Z0-9_-]{11}$/.test(trimmed)
+    );
   }
 
   openURLModal(prefilledUrl?: string) {
