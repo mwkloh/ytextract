@@ -125,4 +125,48 @@ export class YouTubeService {
       return `${secs}s`;
     }
   }
+
+  /**
+   * Extract all data for a YouTube video
+   */
+  async extractVideo(url: string): Promise<YouTubeData> {
+    const videoId = this.extractVideoId(url);
+
+    if (!videoId) {
+      throw new Error('Invalid YouTube URL');
+    }
+
+    const [metadata, { plain, timestamped }] = await Promise.all([
+      this.fetchMetadata(videoId),
+      this.fetchTranscript(videoId)
+    ]);
+
+    return {
+      metadata,
+      transcript: plain,
+      timestampedTranscript: timestamped
+    };
+  }
+
+  /**
+   * Extract with retry logic
+   */
+  async extractVideoWithRetry(url: string, maxRetries = 3): Promise<YouTubeData> {
+    let lastError: Error | null = null;
+
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+      try {
+        return await this.extractVideo(url);
+      } catch (error) {
+        lastError = error as Error;
+
+        if (attempt < maxRetries) {
+          const delay = Math.pow(2, attempt) * 1000;
+          await new Promise(resolve => setTimeout(resolve, delay));
+        }
+      }
+    }
+
+    throw lastError || new Error('Failed to extract video after retries');
+  }
 }
