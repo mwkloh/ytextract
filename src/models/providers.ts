@@ -83,8 +83,10 @@ export class OllamaProvider extends BaseLLMProvider {
 
   async testConnection(): Promise<boolean> {
     try {
+      const endpoint = this.settings.llmEndpoint || this.defaultEndpoint;
+      const baseUrl = endpoint.replace('/api/generate', '');
       const response = await this.fetchWithTimeout(
-        this.defaultEndpoint.replace('/api/generate', '/api/tags'),
+        `${baseUrl}/api/tags`,
         { method: 'GET' },
         5000
       );
@@ -147,8 +149,17 @@ export class LMStudioProvider extends BaseLLMProvider {
 
   async testConnection(): Promise<boolean> {
     try {
+      const endpoint = this.settings.llmEndpoint || this.defaultEndpoint;
+      // Handle both /v1/chat/completions and /v1 endpoints
+      let baseUrl = endpoint;
+      if (endpoint.includes('/v1/chat/completions')) {
+        baseUrl = endpoint.replace('/v1/chat/completions', '');
+      } else if (endpoint.endsWith('/v1')) {
+        baseUrl = endpoint.replace('/v1', '');
+      }
+
       const response = await this.fetchWithTimeout(
-        this.defaultEndpoint.replace('/v1/chat/completions', '/v1/models'),
+        `${baseUrl}/v1/models`,
         { method: 'GET' },
         5000
       );
@@ -159,9 +170,14 @@ export class LMStudioProvider extends BaseLLMProvider {
   }
 
   async generateSummary(transcript: string, prompt: string): Promise<LLMResponse> {
-    const endpoint = this.settings.autoDetectEndpoint
+    let endpoint = this.settings.autoDetectEndpoint
       ? this.defaultEndpoint
       : this.settings.llmEndpoint;
+
+    // If endpoint is just /v1, append /chat/completions
+    if (endpoint && endpoint.endsWith('/v1')) {
+      endpoint = `${endpoint}/chat/completions`;
+    }
 
     const requestBody = {
       model: this.settings.llmModel,
@@ -212,8 +228,10 @@ export class LlamaCppProvider extends BaseLLMProvider {
 
   async testConnection(): Promise<boolean> {
     try {
+      const endpoint = this.settings.llmEndpoint || this.defaultEndpoint;
+      const baseUrl = endpoint.replace('/completion', '');
       const response = await this.fetchWithTimeout(
-        this.defaultEndpoint.replace('/completion', '/health'),
+        `${baseUrl}/health`,
         { method: 'GET' },
         5000
       );

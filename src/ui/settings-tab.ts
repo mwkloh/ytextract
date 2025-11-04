@@ -264,6 +264,16 @@ export class YTExtractSettingTab extends PluginSettingTab {
         .setValue(this.plugin.settings.llmProvider)
         .onChange(async (value) => {
           this.plugin.settings.llmProvider = value as any;
+
+          // Update endpoint based on provider selection
+          if (value === 'ollama') {
+            this.plugin.settings.llmEndpoint = 'http://localhost:11434/api/generate';
+          } else if (value === 'lmstudio') {
+            this.plugin.settings.llmEndpoint = 'http://localhost:1234/v1/chat/completions';
+          } else if (value === 'llamacpp') {
+            this.plugin.settings.llmEndpoint = 'http://localhost:8080/completion';
+          }
+
           await this.plugin.saveSettings();
           this.display();
         }));
@@ -298,6 +308,34 @@ export class YTExtractSettingTab extends PluginSettingTab {
         .onChange(async (value) => {
           this.plugin.settings.llmModel = value;
           await this.plugin.saveSettings();
+        }));
+
+    new Setting(containerEl)
+      .setName('Test Connection')
+      .setDesc('Test connection to your LLM provider')
+      .addButton(button => button
+        .setButtonText('Test Connection')
+        .setCta()
+        .onClick(async () => {
+          button.setButtonText('Testing...');
+          button.setDisabled(true);
+
+          try {
+            const llmService = new (await import('../services/llm')).LLMService(this.plugin.settings);
+            const isConnected = await llmService.testConnection();
+
+            if (isConnected) {
+              new Notice('✅ Successfully connected to LLM provider!');
+            } else {
+              new Notice('❌ Failed to connect to LLM provider. Check your settings.');
+            }
+          } catch (error) {
+            new Notice(`❌ Connection test failed: ${error.message}`);
+            console.error('LLM connection test error:', error);
+          } finally {
+            button.setButtonText('Test Connection');
+            button.setDisabled(false);
+          }
         }));
 
     new Setting(containerEl)
