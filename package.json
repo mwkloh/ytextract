@@ -22,7 +22,7 @@
     "typescript": "^5.3.2"
   },
   "dependencies": {
-    "youtube-transcript": "^1.0.6",
-    "ytdl-core": "^4.11.5"
+    "@distube/ytdl-core": "^4.16.12",
+    "youtube-transcript": "^1.0.6"
   }
 }
