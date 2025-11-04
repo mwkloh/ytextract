@@ -76,3 +76,67 @@ export abstract class BaseLLMProvider implements LLMProvider {
       .filter(line => line.length > 0);
   }
 }
+
+export class OllamaProvider extends BaseLLMProvider {
+  name = 'Ollama';
+  defaultEndpoint = 'http://localhost:11434/api/generate';
+
+  async testConnection(): Promise<boolean> {
+    try {
+      const response = await this.fetchWithTimeout(
+        this.defaultEndpoint.replace('/api/generate', '/api/tags'),
+        { method: 'GET' },
+        5000
+      );
+      return response.ok;
+    } catch {
+      return false;
+    }
+  }
+
+  async generateSummary(transcript: string, prompt: string): Promise<LLMResponse> {
+    const endpoint = this.settings.autoDetectEndpoint
+      ? this.defaultEndpoint
+      : this.settings.llmEndpoint;
+
+    const requestBody = {
+      model: this.settings.llmModel,
+      prompt: this.buildPrompt(transcript, prompt),
+      stream: false
+    };
+
+    try {
+      const response = await this.fetchWithTimeout(
+        endpoint,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(requestBody)
+        },
+        this.settings.requestTimeout
+      );
+
+      if (!response.ok) {
+        throw new Error(`Ollama request failed: ${response.statusText}`);
+      }
+
+      const data = await response.json();
+      return this.parseLLMOutput(data.response);
+    } catch (error) {
+      throw new Error(`Ollama generation failed: ${error.message}`);
+    }
+  }
+
+  private buildPrompt(transcript: string, systemPrompt: string): string {
+    let prompt = `${systemPrompt}\n\nTranscript:\n${transcript}\n\n`;
+
+    const outputs = [];
+    if (this.settings.outputSummary) outputs.push('summary');
+    if (this.settings.outputKeyPoints) outputs.push('key points');
+    if (this.settings.outputTags) outputs.push('tags');
+    if (this.settings.outputQuestions) outputs.push('questions');
+
+    prompt += `Please provide: ${outputs.join(', ')}`;
+    return prompt;
+  }
+}
