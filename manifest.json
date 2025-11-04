@@ -1,7 +1,7 @@
 {
   "id": "YTextract",
   "name": "YouTube Transcript Extractor",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "minAppVersion": "0.15.0",
   "description": "Extract YouTube transcripts and generate AI-powered summaries using local LLMs",
   "author": "Michael Loh",
