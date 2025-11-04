@@ -24,6 +24,11 @@ export default class YTExtractPlugin extends Plugin {
       callback: () => this.openURLModal()
     });
 
+    // Add ribbon icon
+    this.addRibbonIcon('youtube', 'Extract YouTube Video', () => {
+      this.openURLModal();
+    });
+
     // Add settings tab
     this.addSettingTab(new YTExtractSettingTab(this.app, this));
   }
