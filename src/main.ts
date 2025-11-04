@@ -15,7 +15,7 @@ export default class YTExtractPlugin extends Plugin {
     await this.loadSettings();
 
     // Initialize status bar
-    this.statusBar = new StatusBarManager(this.addStatusBarItem());
+    this.statusBar = new StatusBarManager(this);
 
     // Add command palette command
     this.addCommand({
@@ -69,7 +69,7 @@ export default class YTExtractPlugin extends Plugin {
         this.settings,
         this.statusBar
       );
-      await extractionService.extractVideo(url);
+      await extractionService.extract(url);
     }, prefilledUrl).open();
   }
 
