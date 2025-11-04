@@ -412,4 +412,27 @@ export class YTExtractSettingTab extends PluginSettingTab {
   private generateTemplateContent(): string {
     return this.buildTemplateFrontmatter() + this.buildTemplateBody();
   }
+
+  private sanitizeFilename(filename: string): string {
+    // Remove special characters, replace spaces with hyphens
+    let sanitized = filename
+      .replace(/[\\/:*?"<>|]/g, '')
+      .replace(/\s+/g, '-')
+      .toLowerCase();
+
+    // Add .md extension if not present
+    if (!sanitized.endsWith('.md')) {
+      sanitized += '.md';
+    }
+
+    return sanitized;
+  }
+
+  private validateFilename(filename: string): boolean {
+    if (!filename || filename.trim().length === 0) {
+      new Notice('Please enter a template name');
+      return false;
+    }
+    return true;
+  }
 }
