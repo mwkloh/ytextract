@@ -1,0 +1,11 @@
+{
+  "id": "ytextract",
+  "name": "YouTube Transcript Extractor",
+  "version": "1.0.0",
+  "minAppVersion": "0.15.0",
+  "description": "Extract YouTube transcripts and generate AI-powered summaries using local LLMs",
+  "author": "Your Name",
+  "authorUrl": "https://yourwebsite.com",
+  "fundingUrl": "",
+  "isDesktopOnly": false
+}
