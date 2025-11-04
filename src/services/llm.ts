@@ -1,0 +1,81 @@
+import { LLMProvider, LLMResponse, YTExtractSettings } from '../models/types';
+import { OllamaProvider, LMStudioProvider, LlamaCppProvider } from '../models/providers';
+
+export class LLMService {
+  private provider: LLMProvider;
+
+  constructor(private settings: YTExtractSettings) {
+    this.provider = this.createProvider();
+  }
+
+  /**
+   * Create provider instance based on settings
+   */
+  private createProvider(): LLMProvider {
+    switch (this.settings.llmProvider) {
+      case 'ollama':
+        return new OllamaProvider(this.settings);
+      case 'lmstudio':
+        return new LMStudioProvider(this.settings);
+      case 'llamacpp':
+        return new LlamaCppProvider(this.settings);
+      default:
+        return new OllamaProvider(this.settings);
+    }
+  }
+
+  /**
+   * Auto-detect available LLM provider
+   * Tries all providers in order: Ollama, LM Studio, llama.cpp
+   * Returns first available provider or null if none found
+   */
+  async autoDetect(): Promise<LLMProvider | null> {
+    const providers = [
+      new OllamaProvider(this.settings),
+      new LMStudioProvider(this.settings),
+      new LlamaCppProvider(this.settings)
+    ];
+
+    for (const provider of providers) {
+      try {
+        const isAvailable = await provider.testConnection();
+        if (isAvailable) {
+          return provider;
+        }
+      } catch {
+        continue;
+      }
+    }
+
+    return null;
+  }
+
+  /**
+   * Test current provider connection
+   */
+  async testConnection(): Promise<boolean> {
+    try {
+      return await this.provider.testConnection();
+    } catch {
+      return false;
+    }
+  }
+
+  /**
+   * Generate summary and other outputs
+   * Auto-detects provider if auto-detect is enabled
+   */
+  async generateSummary(transcript: string): Promise<LLMResponse> {
+    if (this.settings.autoDetectEndpoint) {
+      const detectedProvider = await this.autoDetect();
+      if (detectedProvider) {
+        this.provider = detectedProvider;
+      }
+    }
+
+    return await this.provider.generateSummary(
+      transcript,
+      this.settings.customSystemPrompt
+    );
+  }
+}
