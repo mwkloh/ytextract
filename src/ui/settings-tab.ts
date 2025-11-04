@@ -345,4 +345,71 @@ export class YTExtractSettingTab extends PluginSettingTab {
           await this.plugin.saveSettings();
         }));
   }
+
+  private buildTemplateFrontmatter(): string {
+    const settings = this.plugin.settings;
+    let frontmatter = '---\n';
+
+    // Always include core fields
+    frontmatter += 'title: {{title}}\n';
+    frontmatter += 'url: {{url}}\n';
+    frontmatter += 'channel: {{channel}}\n';
+
+    // Optional metadata fields
+    if (settings.includeUploadDate) {
+      frontmatter += 'date: {{upload_date}}\n';
+    }
+    if (settings.includeDuration) {
+      frontmatter += 'duration: {{duration}}\n';
+    }
+    if (settings.includeViewCount) {
+      frontmatter += 'view_count: {{view_count}}\n';
+    }
+    if (settings.includeDescription) {
+      frontmatter += 'description: {{description}}\n';
+    }
+    if (settings.includeChannelUrl) {
+      frontmatter += 'channel_url: {{channel_url}}\n';
+    }
+    if (settings.includeThumbnailUrl) {
+      frontmatter += 'thumbnail_url: {{thumbnail_url}}\n';
+    }
+    if (settings.templateGeneratorSections.includeTags) {
+      frontmatter += 'tags: {{generated_tags}}\n';
+    }
+
+    frontmatter += '---\n\n';
+    return frontmatter;
+  }
+
+  private buildTemplateBody(): string {
+    const sections = this.plugin.settings.templateGeneratorSections;
+    let body = '# {{title}}\n\n';
+
+    if (sections.includeSummary) {
+      body += '## Summary\n{{llm_summary}}\n\n---\n\n';
+    }
+
+    if (sections.includeKeyPoints) {
+      body += '## Key Points\n{{llm_key_points}}\n\n---\n\n';
+    }
+
+    if (sections.includePersonalNotes) {
+      body += '## Personal Notes\n\n---\n\n';
+    }
+
+    if (sections.includeQuestions) {
+      body += '## Questions\n{{llm_questions}}\n\n---\n\n';
+    }
+
+    if (sections.includeTranscript) {
+      body += '## Transcript\n{{transcript}}';
+    }
+
+    return body;
+  }
+
+  private generateTemplateContent(): string {
+    return this.buildTemplateFrontmatter() + this.buildTemplateBody();
+  }
 }
