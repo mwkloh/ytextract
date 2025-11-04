@@ -1,0 +1,267 @@
+import { App, PluginSettingTab, Setting } from 'obsidian';
+import YTExtractPlugin from '../main';
+
+export class YTExtractSettingTab extends PluginSettingTab {
+  plugin: YTExtractPlugin;
+
+  constructor(app: App, plugin: YTExtractPlugin) {
+    super(app, plugin);
+    this.plugin = plugin;
+  }
+
+  display(): void {
+    const { containerEl } = this;
+    containerEl.empty();
+
+    containerEl.createEl('h2', { text: 'YouTube Transcript Extractor Settings' });
+
+    this.addFileManagementSettings(containerEl);
+    this.addMetadataSettings(containerEl);
+    this.addLLMSettings(containerEl);
+    this.addErrorHandlingSettings(containerEl);
+  }
+
+  private addFileManagementSettings(containerEl: HTMLElement): void {
+    containerEl.createEl('h3', { text: 'File Management' });
+
+    new Setting(containerEl)
+      .setName('Default folder')
+      .setDesc('Default folder to save extracted videos')
+      .addText(text => text
+        .setPlaceholder('Example: YouTube')
+        .setValue(this.plugin.settings.defaultFolder)
+        .onChange(async (value) => {
+          this.plugin.settings.defaultFolder = value;
+          await this.plugin.saveSettings();
+        }));
+
+    new Setting(containerEl)
+      .setName('Naming pattern')
+      .setDesc('File naming pattern. Variables: {date}, {title}, {channel}, {id}')
+      .addText(text => text
+        .setPlaceholder('{date} - {title}')
+        .setValue(this.plugin.settings.namingPattern)
+        .onChange(async (value) => {
+          this.plugin.settings.namingPattern = value;
+          await this.plugin.saveSettings();
+        }));
+
+    new Setting(containerEl)
+      .setName('Template file path')
+      .setDesc('Path to custom template file (leave empty for default)')
+      .addText(text => text
+        .setPlaceholder('templates/youtube.md')
+        .setValue(this.plugin.settings.templatePath)
+        .onChange(async (value) => {
+          this.plugin.settings.templatePath = value;
+          await this.plugin.saveSettings();
+        }));
+
+    new Setting(containerEl)
+      .setName('File exists behavior')
+      .setDesc('What to do when file already exists')
+      .addDropdown(dropdown => dropdown
+        .addOption('append', 'Append number to filename')
+        .addOption('prompt', 'Prompt for overwrite')
+        .setValue(this.plugin.settings.fileExistsBehavior)
+        .onChange(async (value) => {
+          this.plugin.settings.fileExistsBehavior = value as 'append' | 'prompt';
+          await this.plugin.saveSettings();
+        }));
+  }
+
+  private addMetadataSettings(containerEl: HTMLElement): void {
+    containerEl.createEl('h3', { text: 'Video Metadata Fields' });
+
+    new Setting(containerEl)
+      .setName('Include upload date')
+      .setDesc('Include video upload date in template')
+      .addToggle(toggle => toggle
+        .setValue(this.plugin.settings.includeUploadDate)
+        .onChange(async (value) => {
+          this.plugin.settings.includeUploadDate = value;
+          await this.plugin.saveSettings();
+        }));
+
+    new Setting(containerEl)
+      .setName('Include duration')
+      .setDesc('Include video duration in template')
+      .addToggle(toggle => toggle
+        .setValue(this.plugin.settings.includeDuration)
+        .onChange(async (value) => {
+          this.plugin.settings.includeDuration = value;
+          await this.plugin.saveSettings();
+        }));
+
+    new Setting(containerEl)
+      .setName('Include view count')
+      .setDesc('Include video view count in template')
+      .addToggle(toggle => toggle
+        .setValue(this.plugin.settings.includeViewCount)
+        .onChange(async (value) => {
+          this.plugin.settings.includeViewCount = value;
+          await this.plugin.saveSettings();
+        }));
+
+    new Setting(containerEl)
+      .setName('Include description')
+      .setDesc('Include video description in template')
+      .addToggle(toggle => toggle
+        .setValue(this.plugin.settings.includeDescription)
+        .onChange(async (value) => {
+          this.plugin.settings.includeDescription = value;
+          await this.plugin.saveSettings();
+        }));
+
+    new Setting(containerEl)
+      .setName('Include channel URL')
+      .setDesc('Include channel URL in template')
+      .addToggle(toggle => toggle
+        .setValue(this.plugin.settings.includeChannelUrl)
+        .onChange(async (value) => {
+          this.plugin.settings.includeChannelUrl = value;
+          await this.plugin.saveSettings();
+        }));
+
+    new Setting(containerEl)
+      .setName('Include thumbnail URL')
+      .setDesc('Include video thumbnail URL in template')
+      .addToggle(toggle => toggle
+        .setValue(this.plugin.settings.includeThumbnailUrl)
+        .onChange(async (value) => {
+          this.plugin.settings.includeThumbnailUrl = value;
+          await this.plugin.saveSettings();
+        }));
+  }
+
+  private addLLMSettings(containerEl: HTMLElement): void {
+    containerEl.createEl('h3', { text: 'LLM Configuration' });
+
+    new Setting(containerEl)
+      .setName('LLM Provider')
+      .setDesc('Select your local LLM provider')
+      .addDropdown(dropdown => dropdown
+        .addOption('ollama', 'Ollama')
+        .addOption('lmstudio', 'LM Studio')
+        .addOption('llamacpp', 'llama.cpp')
+        .addOption('custom', 'Custom')
+        .setValue(this.plugin.settings.llmProvider)
+        .onChange(async (value) => {
+          this.plugin.settings.llmProvider = value as any;
+          await this.plugin.saveSettings();
+          this.display();
+        }));
+
+    new Setting(containerEl)
+      .setName('Auto-detect endpoint')
+      .setDesc('Automatically detect LLM endpoint')
+      .addToggle(toggle => toggle
+        .setValue(this.plugin.settings.autoDetectEndpoint)
+        .onChange(async (value) => {
+          this.plugin.settings.autoDetectEndpoint = value;
+          await this.plugin.saveSettings();
+        }));
+
+    new Setting(containerEl)
+      .setName('LLM Endpoint')
+      .setDesc('Custom endpoint URL for LLM')
+      .addText(text => text
+        .setPlaceholder('http://localhost:11434/api/generate')
+        .setValue(this.plugin.settings.llmEndpoint)
+        .onChange(async (value) => {
+          this.plugin.settings.llmEndpoint = value;
+          await this.plugin.saveSettings();
+        }));
+
+    new Setting(containerEl)
+      .setName('Model name')
+      .setDesc('LLM model name to use')
+      .addText(text => text
+        .setPlaceholder('llama2')
+        .setValue(this.plugin.settings.llmModel)
+        .onChange(async (value) => {
+          this.plugin.settings.llmModel = value;
+          await this.plugin.saveSettings();
+        }));
+
+    new Setting(containerEl)
+      .setName('Custom system prompt')
+      .setDesc('Customize the prompt sent to the LLM')
+      .addTextArea(text => text
+        .setPlaceholder('Summarize the following transcript...')
+        .setValue(this.plugin.settings.customSystemPrompt)
+        .onChange(async (value) => {
+          this.plugin.settings.customSystemPrompt = value;
+          await this.plugin.saveSettings();
+        }));
+
+    containerEl.createEl('h4', { text: 'LLM Output Options' });
+
+    new Setting(containerEl)
+      .setName('Generate summary')
+      .addToggle(toggle => toggle
+        .setValue(this.plugin.settings.outputSummary)
+        .onChange(async (value) => {
+          this.plugin.settings.outputSummary = value;
+          await this.plugin.saveSettings();
+        }));
+
+    new Setting(containerEl)
+      .setName('Generate key points')
+      .addToggle(toggle => toggle
+        .setValue(this.plugin.settings.outputKeyPoints)
+        .onChange(async (value) => {
+          this.plugin.settings.outputKeyPoints = value;
+          await this.plugin.saveSettings();
+        }));
+
+    new Setting(containerEl)
+      .setName('Generate tags')
+      .addToggle(toggle => toggle
+        .setValue(this.plugin.settings.outputTags)
+        .onChange(async (value) => {
+          this.plugin.settings.outputTags = value;
+          await this.plugin.saveSettings();
+        }));
+
+    new Setting(containerEl)
+      .setName('Generate questions')
+      .addToggle(toggle => toggle
+        .setValue(this.plugin.settings.outputQuestions)
+        .onChange(async (value) => {
+          this.plugin.settings.outputQuestions = value;
+          await this.plugin.saveSettings();
+        }));
+
+    new Setting(containerEl)
+      .setName('Request timeout (ms)')
+      .setDesc('Timeout for LLM requests in milliseconds')
+      .addText(text => text
+        .setPlaceholder('30000')
+        .setValue(String(this.plugin.settings.requestTimeout))
+        .onChange(async (value) => {
+          const num = parseInt(value);
+          if (!isNaN(num)) {
+            this.plugin.settings.requestTimeout = num;
+            await this.plugin.saveSettings();
+          }
+        }));
+  }
+
+  private addErrorHandlingSettings(containerEl: HTMLElement): void {
+    containerEl.createEl('h3', { text: 'Error Handling' });
+
+    new Setting(containerEl)
+      .setName('Error behavior')
+      .setDesc('How to handle errors during extraction')
+      .addDropdown(dropdown => dropdown
+        .addOption('stop', 'Stop on error (don\'t create file)')
+        .addOption('partial', 'Save partial data')
+        .addOption('skip', 'Skip failed steps with warning')
+        .setValue(this.plugin.settings.errorBehavior)
+        .onChange(async (value) => {
+          this.plugin.settings.errorBehavior = value as 'stop' | 'partial' | 'skip';
+          await this.plugin.saveSettings();
+        }));
+  }
+}

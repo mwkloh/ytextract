@@ -1,5 +1,6 @@
 import { Plugin } from 'obsidian';
 import { YTExtractSettings, DEFAULT_SETTINGS } from './models/types';
+import { YTExtractSettingTab } from './ui/settings-tab';
 
 export default class YTExtractPlugin extends Plugin {
   settings: YTExtractSettings;
@@ -8,6 +9,9 @@ export default class YTExtractPlugin extends Plugin {
     console.log('Loading YouTube Transcript Extractor plugin');
 
     await this.loadSettings();
+
+    // Add settings tab
+    this.addSettingTab(new YTExtractSettingTab(this.app, this));
   }
 
   async onunload() {
