@@ -205,3 +205,65 @@ export class LMStudioProvider extends BaseLLMProvider {
     return `Transcript:\n${transcript}\n\nPlease provide: ${outputs.join(', ')}`;
   }
 }
+
+export class LlamaCppProvider extends BaseLLMProvider {
+  name = 'llama.cpp';
+  defaultEndpoint = 'http://localhost:8080/completion';
+
+  async testConnection(): Promise<boolean> {
+    try {
+      const response = await this.fetchWithTimeout(
+        this.defaultEndpoint.replace('/completion', '/health'),
+        { method: 'GET' },
+        5000
+      );
+      return response.ok;
+    } catch {
+      return false;
+    }
+  }
+
+  async generateSummary(transcript: string, prompt: string): Promise<LLMResponse> {
+    const endpoint = this.settings.autoDetectEndpoint
+      ? this.defaultEndpoint
+      : this.settings.llmEndpoint;
+
+    const requestBody = {
+      prompt: this.buildPrompt(transcript, prompt),
+      n_predict: 512,
+      temperature: 0.7,
+      stop: ['</s>', '\n\n\n']
+    };
+
+    try {
+      const response = await this.fetchWithTimeout(
+        endpoint,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(requestBody)
+        },
+        this.settings.requestTimeout
+      );
+
+      if (!response.ok) {
+        throw new Error(`llama.cpp request failed: ${response.statusText}`);
+      }
+
+      const data = await response.json();
+      return this.parseLLMOutput(data.content);
+    } catch (error) {
+      throw new Error(`llama.cpp generation failed: ${error.message}`);
+    }
+  }
+
+  private buildPrompt(transcript: string, systemPrompt: string): string {
+    const outputs = [];
+    if (this.settings.outputSummary) outputs.push('summary');
+    if (this.settings.outputKeyPoints) outputs.push('key points');
+    if (this.settings.outputTags) outputs.push('tags');
+    if (this.settings.outputQuestions) outputs.push('questions');
+
+    return `${systemPrompt}\n\nTranscript:\n${transcript}\n\nPlease provide: ${outputs.join(', ')}`;
+  }
+}
