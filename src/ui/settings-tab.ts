@@ -219,6 +219,11 @@ export class YTExtractSettingTab extends PluginSettingTab {
             return;
           }
 
+          // Validate section selection
+          if (!this.validateSectionSelection()) {
+            return;
+          }
+
           // Sanitize filename
           const sanitizedFilename = this.sanitizeFilename(this.templateFilename);
 
@@ -463,6 +468,24 @@ export class YTExtractSettingTab extends PluginSettingTab {
       new Notice('Please enter a template name');
       return false;
     }
+    return true;
+  }
+
+  private validateSectionSelection(): boolean {
+    const sections = this.plugin.settings.templateGeneratorSections;
+    const hasSelection =
+      sections.includeSummary ||
+      sections.includeKeyPoints ||
+      sections.includeTags ||
+      sections.includeQuestions ||
+      sections.includePersonalNotes ||
+      sections.includeTranscript;
+
+    if (!hasSelection) {
+      new Notice('Please select at least one section to include in the template');
+      return false;
+    }
+
     return true;
   }
 
