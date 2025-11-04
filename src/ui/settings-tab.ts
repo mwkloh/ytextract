@@ -1,4 +1,4 @@
-import { App, Notice, PluginSettingTab, Setting } from 'obsidian';
+import { App, Notice, PluginSettingTab, Setting, TFile, TFolder } from 'obsidian';
 import YTExtractPlugin from '../main';
 
 export class YTExtractSettingTab extends PluginSettingTab {
@@ -434,5 +434,47 @@ export class YTExtractSettingTab extends PluginSettingTab {
       return false;
     }
     return true;
+  }
+
+  private getTemplatesFolder(): string {
+    // Try to get user's configured templates folder
+    const adapter = this.app.vault.adapter;
+    const config = (this.app.vault as any).config;
+
+    // Check if templates folder is configured
+    if (config && config.templatesFolder) {
+      return config.templatesFolder;
+    }
+
+    // Default to 'templates' folder in vault root
+    return 'templates';
+  }
+
+  private async ensureFolderExists(folderPath: string): Promise<void> {
+    const folder = this.app.vault.getAbstractFileByPath(folderPath);
+
+    if (!folder) {
+      await this.app.vault.createFolder(folderPath);
+    }
+  }
+
+  private async createTemplateFile(filename: string, content: string): Promise<string> {
+    const templatesFolder = this.getTemplatesFolder();
+    await this.ensureFolderExists(templatesFolder);
+
+    const filePath = `${templatesFolder}/${filename}`;
+    const existingFile = this.app.vault.getAbstractFileByPath(filePath);
+
+    if (existingFile) {
+      // File exists - overwrite it
+      if (existingFile instanceof TFile) {
+        await this.app.vault.modify(existingFile, content);
+      }
+    } else {
+      // Create new file
+      await this.app.vault.create(filePath, content);
+    }
+
+    return filePath;
   }
 }
