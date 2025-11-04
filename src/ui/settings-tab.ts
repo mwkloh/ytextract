@@ -1,4 +1,4 @@
-import { App, PluginSettingTab, Setting } from 'obsidian';
+import { App, Notice, PluginSettingTab, Setting } from 'obsidian';
 import YTExtractPlugin from '../main';
 
 export class YTExtractSettingTab extends PluginSettingTab {
@@ -131,6 +131,87 @@ export class YTExtractSettingTab extends PluginSettingTab {
         .onChange(async (value) => {
           this.plugin.settings.includeThumbnailUrl = value;
           await this.plugin.saveSettings();
+        }));
+
+    // Template Generator subsection
+    containerEl.createEl('h4', { text: 'Template Generator' });
+
+    containerEl.createEl('p', {
+      text: 'If you don\'t generate a custom template, a default template will be used.',
+      cls: 'setting-item-description'
+    });
+
+    new Setting(containerEl)
+      .setName('Template filename')
+      .setDesc('Enter template filename (without .md)')
+      .addText(text => text
+        .setPlaceholder('youtube-template')
+        .setValue('')
+      );
+
+    new Setting(containerEl)
+      .setName('Include Summary section')
+      .addToggle(toggle => toggle
+        .setValue(this.plugin.settings.templateGeneratorSections.includeSummary)
+        .onChange(async (value) => {
+          this.plugin.settings.templateGeneratorSections.includeSummary = value;
+          await this.plugin.saveSettings();
+        }));
+
+    new Setting(containerEl)
+      .setName('Include Key Points section')
+      .addToggle(toggle => toggle
+        .setValue(this.plugin.settings.templateGeneratorSections.includeKeyPoints)
+        .onChange(async (value) => {
+          this.plugin.settings.templateGeneratorSections.includeKeyPoints = value;
+          await this.plugin.saveSettings();
+        }));
+
+    new Setting(containerEl)
+      .setName('Include Tags section')
+      .addToggle(toggle => toggle
+        .setValue(this.plugin.settings.templateGeneratorSections.includeTags)
+        .onChange(async (value) => {
+          this.plugin.settings.templateGeneratorSections.includeTags = value;
+          await this.plugin.saveSettings();
+        }));
+
+    new Setting(containerEl)
+      .setName('Include Questions section')
+      .addToggle(toggle => toggle
+        .setValue(this.plugin.settings.templateGeneratorSections.includeQuestions)
+        .onChange(async (value) => {
+          this.plugin.settings.templateGeneratorSections.includeQuestions = value;
+          await this.plugin.saveSettings();
+        }));
+
+    new Setting(containerEl)
+      .setName('Include Personal Notes section')
+      .addToggle(toggle => toggle
+        .setValue(this.plugin.settings.templateGeneratorSections.includePersonalNotes)
+        .onChange(async (value) => {
+          this.plugin.settings.templateGeneratorSections.includePersonalNotes = value;
+          await this.plugin.saveSettings();
+        }));
+
+    new Setting(containerEl)
+      .setName('Include Transcript section')
+      .addToggle(toggle => toggle
+        .setValue(this.plugin.settings.templateGeneratorSections.includeTranscript)
+        .onChange(async (value) => {
+          this.plugin.settings.templateGeneratorSections.includeTranscript = value;
+          await this.plugin.saveSettings();
+        }));
+
+    new Setting(containerEl)
+      .setName('Generate Custom Template')
+      .setDesc('Create a template file based on your selections')
+      .addButton(button => button
+        .setButtonText('Generate Template')
+        .setCta()
+        .onClick(async () => {
+          // TODO: Implement template generation
+          new Notice('Template generation coming soon');
         }));
   }
 
