@@ -122,7 +122,9 @@ duration: {{duration}}
 
     for (const [key, value] of Object.entries(data)) {
       const regex = new RegExp(`{{${key}}}`, 'g');
-      result = result.replace(regex, value);
+      // Escape special regex characters in the replacement string
+      const safeValue = value.replace(/\$/g, '$$$$');
+      result = result.replace(regex, safeValue);
     }
 
     return result;
