@@ -34,24 +34,24 @@ export abstract class BaseLLMProvider implements LLMProvider {
   }
 
   /**
-   * Parse LLM response based on requested outputs
+   * Parse LLM response based on Template Generator settings
    */
   protected parseLLMOutput(rawResponse: string): LLMResponse {
     const response: LLMResponse = {};
 
-    if (this.settings.outputSummary) {
+    if (this.settings.templateGeneratorSections.includeSummary) {
       response.summary = this.extractSection(rawResponse, 'summary');
     }
 
-    if (this.settings.outputKeyPoints) {
+    if (this.settings.templateGeneratorSections.includeKeyPoints) {
       response.keyPoints = this.extractListItems(rawResponse, 'key points');
     }
 
-    if (this.settings.outputTags) {
+    if (this.settings.templateGeneratorSections.includeTags) {
       response.tags = this.extractListItems(rawResponse, 'tags');
     }
 
-    if (this.settings.outputQuestions) {
+    if (this.settings.templateGeneratorSections.includeQuestions) {
       response.questions = this.extractListItems(rawResponse, 'questions');
     }
 
@@ -144,10 +144,10 @@ export class OllamaProvider extends BaseLLMProvider {
     let prompt = `${systemPrompt}\n\nTranscript:\n${transcript}\n\n`;
 
     const outputs = [];
-    if (this.settings.outputSummary) outputs.push('summary');
-    if (this.settings.outputKeyPoints) outputs.push('key points');
-    if (this.settings.outputTags) outputs.push('tags');
-    if (this.settings.outputQuestions) outputs.push('questions');
+    if (this.settings.templateGeneratorSections.includeSummary) outputs.push('summary');
+    if (this.settings.templateGeneratorSections.includeKeyPoints) outputs.push('key points');
+    if (this.settings.templateGeneratorSections.includeTags) outputs.push('tags');
+    if (this.settings.templateGeneratorSections.includeQuestions) outputs.push('questions');
 
     prompt += `Please provide: ${outputs.join(', ')}`;
     return prompt;
@@ -236,10 +236,10 @@ export class LMStudioProvider extends BaseLLMProvider {
 
   private buildUserPrompt(transcript: string): string {
     const outputs = [];
-    if (this.settings.outputSummary) outputs.push('summary');
-    if (this.settings.outputKeyPoints) outputs.push('key points');
-    if (this.settings.outputTags) outputs.push('tags');
-    if (this.settings.outputQuestions) outputs.push('questions');
+    if (this.settings.templateGeneratorSections.includeSummary) outputs.push('summary');
+    if (this.settings.templateGeneratorSections.includeKeyPoints) outputs.push('key points');
+    if (this.settings.templateGeneratorSections.includeTags) outputs.push('tags');
+    if (this.settings.templateGeneratorSections.includeQuestions) outputs.push('questions');
 
     return `Transcript:\n${transcript}\n\nPlease provide: ${outputs.join(', ')}`;
   }
@@ -300,10 +300,10 @@ export class LlamaCppProvider extends BaseLLMProvider {
 
   private buildPrompt(transcript: string, systemPrompt: string): string {
     const outputs = [];
-    if (this.settings.outputSummary) outputs.push('summary');
-    if (this.settings.outputKeyPoints) outputs.push('key points');
-    if (this.settings.outputTags) outputs.push('tags');
-    if (this.settings.outputQuestions) outputs.push('questions');
+    if (this.settings.templateGeneratorSections.includeSummary) outputs.push('summary');
+    if (this.settings.templateGeneratorSections.includeKeyPoints) outputs.push('key points');
+    if (this.settings.templateGeneratorSections.includeTags) outputs.push('tags');
+    if (this.settings.templateGeneratorSections.includeQuestions) outputs.push('questions');
 
     return `${systemPrompt}\n\nTranscript:\n${transcript}\n\nPlease provide: ${outputs.join(', ')}`;
   }

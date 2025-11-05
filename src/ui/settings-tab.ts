@@ -349,44 +349,6 @@ export class YTExtractSettingTab extends PluginSettingTab {
           await this.plugin.saveSettings();
         }));
 
-    containerEl.createEl('h4', { text: 'LLM Output Options' });
-
-    new Setting(containerEl)
-      .setName('Generate summary')
-      .addToggle(toggle => toggle
-        .setValue(this.plugin.settings.outputSummary)
-        .onChange(async (value) => {
-          this.plugin.settings.outputSummary = value;
-          await this.plugin.saveSettings();
-        }));
-
-    new Setting(containerEl)
-      .setName('Generate key points')
-      .addToggle(toggle => toggle
-        .setValue(this.plugin.settings.outputKeyPoints)
-        .onChange(async (value) => {
-          this.plugin.settings.outputKeyPoints = value;
-          await this.plugin.saveSettings();
-        }));
-
-    new Setting(containerEl)
-      .setName('Generate tags')
-      .addToggle(toggle => toggle
-        .setValue(this.plugin.settings.outputTags)
-        .onChange(async (value) => {
-          this.plugin.settings.outputTags = value;
-          await this.plugin.saveSettings();
-        }));
-
-    new Setting(containerEl)
-      .setName('Generate questions')
-      .addToggle(toggle => toggle
-        .setValue(this.plugin.settings.outputQuestions)
-        .onChange(async (value) => {
-          this.plugin.settings.outputQuestions = value;
-          await this.plugin.saveSettings();
-        }));
-
     new Setting(containerEl)
       .setName('Request timeout (ms)')
       .setDesc('Timeout for LLM requests in milliseconds')

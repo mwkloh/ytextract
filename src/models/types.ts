@@ -19,10 +19,6 @@ export interface YTExtractSettings {
   llmEndpoint: string;
   llmModel: string;
   customSystemPrompt: string;
-  outputSummary: boolean;
-  outputKeyPoints: boolean;
-  outputTags: boolean;
-  outputQuestions: boolean;
   requestTimeout: number;
 
   // Error Handling
@@ -57,10 +53,6 @@ export const DEFAULT_SETTINGS: YTExtractSettings = {
   llmEndpoint: 'http://localhost:11434/api/generate',
   llmModel: 'llama2',
   customSystemPrompt: 'Summarize the following transcript concisely and suggest relevant tags',
-  outputSummary: true,
-  outputKeyPoints: true,
-  outputTags: true,
-  outputQuestions: false,
   requestTimeout: 30000,
 
   errorBehavior: 'skip',
