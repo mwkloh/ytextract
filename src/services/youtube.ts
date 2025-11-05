@@ -1,6 +1,9 @@
 import { TranscriptSegment, VideoMetadata, YouTubeData } from '../models/types';
 import { YoutubeTranscript } from 'youtube-transcript';
-import ytdl from '@distube/ytdl-core';
+import { requestUrl } from 'obsidian';
+
+// Note: Removed ytdl-core due to CORS issues in Obsidian
+// Using Obsidian's requestUrl API instead
 
 export class YouTubeService {
   /**
@@ -83,30 +86,83 @@ export class YouTubeService {
   }
 
   /**
-   * Fetch video metadata
+   * Fetch video metadata using Obsidian's requestUrl (CORS-safe)
+   * Parses YouTube page HTML to extract video information
    */
   async fetchMetadata(videoId: string): Promise<VideoMetadata> {
     try {
       const url = `https://www.youtube.com/watch?v=${videoId}`;
-      const info = await ytdl.getInfo(url);
 
-      const videoDetails = info.videoDetails;
+      // Use Obsidian's requestUrl which bypasses CORS
+      const response = await requestUrl({ url });
+      const html = response.text;
+
+      // Parse metadata from YouTube page HTML using regex
+      const title = this.extractFromHTML(html, /"title":"([^"]+)"/) || `Video ${videoId}`;
+      const channel = this.extractFromHTML(html, /"author":"([^"]+)"/) || 'Unknown Channel';
+      const lengthSeconds = this.extractFromHTML(html, /"lengthSeconds":"(\d+)"/) || '0';
+      const viewCount = this.extractFromHTML(html, /"viewCount":"(\d+)"/) || '0';
+      const publishDate = this.extractFromHTML(html, /"publishDate":"([^"]+)"/) || new Date().toISOString().split('T')[0];
+      const description = this.extractFromHTML(html, /"shortDescription":"([^"]+)"/) || '';
 
       return {
-        title: videoDetails.title,
+        title: this.decodeHTML(title),
         url: url,
         videoId: videoId,
-        channel: videoDetails.author.name,
-        uploadDate: videoDetails.publishDate,
-        duration: this.formatDuration(parseInt(videoDetails.lengthSeconds)),
-        viewCount: parseInt(videoDetails.viewCount),
-        description: videoDetails.description || '',
-        channelUrl: videoDetails.author.channel_url,
-        thumbnailUrl: videoDetails.thumbnails[0]?.url || ''
+        channel: this.decodeHTML(channel),
+        uploadDate: publishDate,
+        duration: this.formatDuration(parseInt(lengthSeconds)),
+        viewCount: parseInt(viewCount),
+        description: this.decodeHTML(description),
+        channelUrl: `https://www.youtube.com/channel/${videoId}`,
+        thumbnailUrl: `https://i.ytimg.com/vi/${videoId}/maxresdefault.jpg`
       };
     } catch (error) {
-      throw new Error(`Failed to fetch metadata: ${error.message}`);
+      // Fallback to minimal metadata if parsing fails
+      const url = `https://www.youtube.com/watch?v=${videoId}`;
+      return {
+        title: `Video ${videoId}`,
+        url: url,
+        videoId: videoId,
+        channel: 'Unknown',
+        uploadDate: new Date().toISOString().split('T')[0],
+        duration: '0:00',
+        viewCount: 0,
+        description: '',
+        channelUrl: '',
+        thumbnailUrl: `https://i.ytimg.com/vi/${videoId}/maxresdefault.jpg`
+      };
     }
+  }
+
+  /**
+   * Extract data from HTML using regex
+   */
+  private extractFromHTML(html: string, regex: RegExp): string | null {
+    const match = html.match(regex);
+    return match ? match[1] : null;
+  }
+
+  /**
+   * Decode HTML entities
+   */
+  private decodeHTML(text: string): string {
+    const entities: Record<string, string> = {
+      '&amp;': '&',
+      '&lt;': '<',
+      '&gt;': '>',
+      '&quot;': '"',
+      '&#39;': "'",
+      '\\u0026': '&',
+      '\\n': '\n'
+    };
+
+    let decoded = text;
+    for (const [entity, char] of Object.entries(entities)) {
+      decoded = decoded.replace(new RegExp(entity, 'g'), char);
+    }
+
+    return decoded;
   }
 
   /**
