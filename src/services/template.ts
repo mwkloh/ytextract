@@ -19,7 +19,7 @@ export class TemplateService {
     // Remove or replace characters that cause YAML parsing issues
     return value
       .replace(/\\/g, '/')        // Replace backslashes with forward slashes
-      .replace(/"/g, "'")         // Replace double quotes with single quotes
+      .replace(/['"]/g, '')       // Remove all quotes (single and double)
       .replace(/:/g, ' -')        // Replace colons with dash
       .replace(/\|/g, '-')        // Replace pipes with dash
       .replace(/>/g, '')          // Remove greater than
