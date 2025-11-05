@@ -70,7 +70,18 @@ export abstract class BaseLLMProvider implements LLMProvider {
 
     if (!match) return [];
 
-    return match[1]
+    const content = match[1].trim();
+
+    // Check if content is comma-separated (inline tags)
+    if (content.includes(',') && !content.includes('\n')) {
+      return content
+        .split(',')
+        .map(item => item.trim())
+        .filter(item => item.length > 0);
+    }
+
+    // Otherwise treat as bullet list (one per line)
+    return content
       .split('\n')
       .map(line => line.replace(/^[-*•]\s*/, '').trim())
       .filter(line => line.length > 0);
