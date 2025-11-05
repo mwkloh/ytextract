@@ -39,8 +39,6 @@ export class YouTubeService {
     plain: string;
     timestamped: TranscriptSegment[];
   }> {
-    console.log('Trying Innertube API for ASR captions...');
-
     // Get initial player response with API key
     const videoUrl = `https://www.youtube.com/watch?v=${videoId}`;
     const pageResponse = await requestUrl({ url: videoUrl });
@@ -52,7 +50,6 @@ export class YouTubeService {
       throw new Error('Could not find Innertube API key');
     }
     const apiKey = apiKeyMatch[1];
-    console.log('Found Innertube API key');
 
     // Call YouTube's internal API
     const innertubeUrl = `https://www.youtube.com/youtubei/v1/player?key=${apiKey}`;
@@ -83,8 +80,6 @@ export class YouTubeService {
       throw new Error('No captions found in Innertube response');
     }
 
-    console.log('Innertube caption tracks:', captionTracks.length);
-
     // Find English captions
     let captionTrack = captionTracks.find((track: any) =>
       track.languageCode === 'en' || track.languageCode.startsWith('en')
@@ -94,14 +89,10 @@ export class YouTubeService {
       captionTrack = captionTracks[0];
     }
 
-    console.log('Selected Innertube track:', captionTrack.languageCode);
-
     // Fetch transcript XML from baseUrl
     const transcriptUrl = captionTrack.baseUrl;
     const transcriptResponse = await requestUrl({ url: transcriptUrl });
     const transcriptXml = transcriptResponse.text;
-
-    console.log('Innertube transcript length:', transcriptXml.length);
 
     if (transcriptXml.length === 0) {
       throw new Error('Empty transcript from Innertube API');
@@ -110,8 +101,6 @@ export class YouTubeService {
     // Parse XML
     const timestamped = this.parseTranscriptXml(transcriptXml);
     const plain = timestamped.map(item => item.text).join(' ');
-
-    console.log('Innertube parsed segments:', timestamped.length);
 
     return { plain, timestamped };
   }
@@ -124,7 +113,6 @@ export class YouTubeService {
     plain: string;
     timestamped: TranscriptSegment[]
   }> {
-    console.log('Fetching transcript using Innertube API directly');
     return await this.fetchTranscriptViaInnertube(videoId);
   }
 
@@ -255,7 +243,6 @@ export class YouTubeService {
       // Parse metadata from YouTube page HTML using regex
       // Use (?:\\.|[^"\\])+ to match escaped quotes (\") and other characters
       const title = this.extractFromHTML(html, /"title":"((?:\\.|[^"\\])+)"/) || `Video ${videoId}`;
-      console.log('Extracted title from YouTube HTML:', title);
       const channel = this.extractFromHTML(html, /"author":"((?:\\.|[^"\\])+)"/) || 'Unknown Channel';
       const lengthSeconds = this.extractFromHTML(html, /"lengthSeconds":"(\d+)"/) || '0';
       const viewCount = this.extractFromHTML(html, /"viewCount":"(\d+)"/) || '0';

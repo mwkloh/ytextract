@@ -16,8 +16,6 @@ export class TemplateService {
    * Sanitize string for safe use in frontmatter by removing problematic characters
    */
   private sanitizeForFrontmatter(value: string): string {
-    console.log('Original value:', value);
-
     // Remove or replace characters that cause YAML parsing issues
     const sanitized = value
       .replace(/\\/g, '/')        // Replace backslashes with forward slashes
@@ -27,7 +25,6 @@ export class TemplateService {
       .replace(/>/g, '')          // Remove greater than
       .replace(/</g, '');         // Remove less than
 
-    console.log('Sanitized value:', sanitized);
     return sanitized;
   }
 
@@ -40,13 +37,7 @@ export class TemplateService {
   ): TemplateData {
     const { metadata, transcript, timestampedTranscript } = youtubeData;
 
-    console.log('Building template data with metadata:', {
-      originalTitle: metadata.title,
-      originalChannel: metadata.channel
-    });
-
     const sanitizedTitle = this.sanitizeForFrontmatter(metadata.title);
-    console.log('Final sanitized title for template:', sanitizedTitle);
 
     return {
       // Video metadata (sanitized for frontmatter)

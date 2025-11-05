@@ -37,34 +37,24 @@ export abstract class BaseLLMProvider implements LLMProvider {
    * Parse LLM response based on Template Generator settings
    */
   protected parseLLMOutput(rawResponse: string): LLMResponse {
-    console.log('=== LLM Raw Response ===');
-    console.log('Length:', rawResponse.length);
-    console.log('First 500 chars:', rawResponse.substring(0, 500));
-    console.log('Last 500 chars:', rawResponse.substring(Math.max(0, rawResponse.length - 500)));
-
     const response: LLMResponse = {};
 
     if (this.settings.templateGeneratorSections.includeSummary) {
       response.summary = this.extractSection(rawResponse, 'summary');
-      console.log('Extracted summary:', response.summary?.substring(0, 200));
     }
 
     if (this.settings.templateGeneratorSections.includeKeyPoints) {
       response.keyPoints = this.extractListItems(rawResponse, 'key points');
-      console.log('Extracted key points:', response.keyPoints);
     }
 
     if (this.settings.templateGeneratorSections.includeTags) {
       response.tags = this.extractListItems(rawResponse, 'tags');
-      console.log('Extracted tags:', response.tags);
     }
 
     if (this.settings.templateGeneratorSections.includeQuestions) {
       response.questions = this.extractListItems(rawResponse, 'questions');
-      console.log('Extracted questions:', response.questions);
     }
 
-    console.log('=== End LLM Response ===');
     return response;
   }
 
