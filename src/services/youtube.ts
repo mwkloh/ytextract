@@ -1,9 +1,8 @@
 import { TranscriptSegment, VideoMetadata, YouTubeData } from '../models/types';
-import { YoutubeTranscript } from 'youtube-transcript';
 import { requestUrl } from 'obsidian';
 
-// Note: Removed ytdl-core due to CORS issues in Obsidian
-// Using Obsidian's requestUrl API instead
+// Custom implementation using Obsidian's requestUrl API to avoid CORS issues
+// Both ytdl-core and youtube-transcript libraries don't work in Obsidian's sandboxed environment
 
 export class YouTubeService {
   /**
@@ -33,27 +32,97 @@ export class YouTubeService {
   }
 
   /**
-   * Fetch transcript for a video
+   * Fetch transcript for a video using Obsidian's requestUrl (CORS-safe)
    */
   async fetchTranscript(videoId: string): Promise<{
     plain: string;
     timestamped: TranscriptSegment[]
   }> {
     try {
-      const transcript = await YoutubeTranscript.fetchTranscript(videoId);
+      // First, get the video page to find the caption tracks
+      const videoUrl = `https://www.youtube.com/watch?v=${videoId}`;
+      const response = await requestUrl({ url: videoUrl });
+      const html = response.text;
 
-      const timestamped: TranscriptSegment[] = transcript.map(item => ({
-        text: item.text,
-        offset: item.offset,
-        duration: item.duration
-      }));
+      // Extract caption tracks URL from the page
+      const captionTracksMatch = html.match(/"captionTracks":(\[.*?\])/);
+      if (!captionTracksMatch) {
+        throw new Error('No captions available for this video');
+      }
 
-      const plain = transcript.map(item => item.text).join(' ');
+      const captionTracks = JSON.parse(captionTracksMatch[1]);
+
+      // Find English captions (or first available)
+      let captionTrack = captionTracks.find((track: any) =>
+        track.languageCode === 'en' || track.languageCode.startsWith('en')
+      );
+
+      if (!captionTrack) {
+        captionTrack = captionTracks[0]; // Use first available if no English
+      }
+
+      if (!captionTrack || !captionTrack.baseUrl) {
+        throw new Error('No valid caption track found');
+      }
+
+      // Fetch the actual transcript XML
+      const transcriptResponse = await requestUrl({ url: captionTrack.baseUrl });
+      const transcriptXml = transcriptResponse.text;
+
+      // Parse the XML to extract transcript segments
+      const timestamped = this.parseTranscriptXml(transcriptXml);
+      const plain = timestamped.map(item => item.text).join(' ');
 
       return { plain, timestamped };
     } catch (error) {
       throw new Error(`Failed to fetch transcript: ${error.message}`);
     }
+  }
+
+  /**
+   * Parse YouTube transcript XML format
+   */
+  private parseTranscriptXml(xml: string): TranscriptSegment[] {
+    const segments: TranscriptSegment[] = [];
+
+    // Match all <text> tags with their attributes
+    const textRegex = /<text start="([^"]+)" dur="([^"]+)"[^>]*>([^<]*)<\/text>/g;
+    let match;
+
+    while ((match = textRegex.exec(xml)) !== null) {
+      const offset = parseFloat(match[1]) * 1000; // Convert to milliseconds
+      const duration = parseFloat(match[2]) * 1000; // Convert to milliseconds
+      const text = this.decodeXMLEntities(match[3]);
+
+      segments.push({
+        text: text.trim(),
+        offset: Math.round(offset),
+        duration: Math.round(duration)
+      });
+    }
+
+    return segments;
+  }
+
+  /**
+   * Decode XML entities in transcript text
+   */
+  private decodeXMLEntities(text: string): string {
+    const entities: Record<string, string> = {
+      '&amp;': '&',
+      '&lt;': '<',
+      '&gt;': '>',
+      '&quot;': '"',
+      '&#39;': "'",
+      '&apos;': "'"
+    };
+
+    let decoded = text;
+    for (const [entity, char] of Object.entries(entities)) {
+      decoded = decoded.replace(new RegExp(entity, 'g'), char);
+    }
+
+    return decoded;
   }
 
   /**
