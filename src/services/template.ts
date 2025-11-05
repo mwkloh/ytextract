@@ -13,6 +13,20 @@ export class TemplateService {
   }
 
   /**
+   * Sanitize string for safe use in frontmatter by removing problematic characters
+   */
+  private sanitizeForFrontmatter(value: string): string {
+    // Remove or replace characters that cause YAML parsing issues
+    return value
+      .replace(/\\/g, '/')        // Replace backslashes with forward slashes
+      .replace(/"/g, "'")         // Replace double quotes with single quotes
+      .replace(/:/g, ' -')        // Replace colons with dash
+      .replace(/\|/g, '-')        // Replace pipes with dash
+      .replace(/>/g, '')          // Remove greater than
+      .replace(/</g, '');         // Remove less than
+  }
+
+  /**
    * Build template data from YouTube data and LLM response
    */
   buildTemplateData(
@@ -22,10 +36,10 @@ export class TemplateService {
     const { metadata, transcript, timestampedTranscript } = youtubeData;
 
     return {
-      // Video metadata
-      title: metadata.title,
+      // Video metadata (sanitized for frontmatter)
+      title: this.sanitizeForFrontmatter(metadata.title),
       url: metadata.url,
-      channel: metadata.channel,
+      channel: this.sanitizeForFrontmatter(metadata.channel),
       upload_date: this.settings.includeUploadDate ? (metadata.uploadDate || '') : '',
       duration: this.settings.includeDuration ? (metadata.duration || '') : '',
       view_count: this.settings.includeViewCount ? String(metadata.viewCount || '') : '',
@@ -115,54 +129,17 @@ duration: {{duration}}
   }
 
   /**
-   * Escape value for safe use in YAML frontmatter
-   */
-  private escapeYAMLValue(value: string): string {
-    // If value contains special YAML characters, wrap in double quotes
-    if (value.includes('"') || value.includes("'") || value.includes(':') || value.includes('#') || value.includes('\\')) {
-      // Escape backslashes and double quotes for double-quoted YAML strings
-      const escaped = value.replace(/\\/g, '\\\\').replace(/"/g, '\\"');
-      return `"${escaped}"`;
-    }
-    return value;
-  }
-
-  /**
    * Replace template variables with actual data
    */
   private replaceVariables(template: string, data: TemplateData): string {
     let result = template;
 
-    // Split template into frontmatter and body
-    const frontmatterMatch = result.match(/^---\n([\s\S]*?)\n---\n([\s\S]*)$/);
-
-    if (frontmatterMatch) {
-      let frontmatter = frontmatterMatch[1];
-      let body = frontmatterMatch[2];
-
-      // Replace variables in frontmatter with escaped values
-      for (const [key, value] of Object.entries(data)) {
-        const regex = new RegExp(`{{${key}}}`, 'g');
-        const escapedValue = this.escapeYAMLValue(value);
-        frontmatter = frontmatter.replace(regex, escapedValue);
-      }
-
-      // Replace variables in body (no escaping needed)
-      for (const [key, value] of Object.entries(data)) {
-        const regex = new RegExp(`{{${key}}}`, 'g');
-        // Escape special regex characters in the replacement string
-        const safeValue = value.replace(/\$/g, '$$$$');
-        body = body.replace(regex, safeValue);
-      }
-
-      result = `---\n${frontmatter}\n---\n${body}`;
-    } else {
-      // No frontmatter, just replace in body
-      for (const [key, value] of Object.entries(data)) {
-        const regex = new RegExp(`{{${key}}}`, 'g');
-        const safeValue = value.replace(/\$/g, '$$$$');
-        result = result.replace(regex, safeValue);
-      }
+    // Simple replacement since values are already sanitized
+    for (const [key, value] of Object.entries(data)) {
+      const regex = new RegExp(`{{${key}}}`, 'g');
+      // Escape special regex replacement characters
+      const safeValue = value.replace(/\$/g, '$$$$');
+      result = result.replace(regex, safeValue);
     }
 
     return result;
