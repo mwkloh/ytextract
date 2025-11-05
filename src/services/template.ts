@@ -119,9 +119,10 @@ duration: {{duration}}
    */
   private escapeYAMLValue(value: string): string {
     // If value contains special YAML characters, wrap in quotes and escape internal quotes
-    if (value.includes('"') || value.includes("'") || value.includes(':') || value.includes('#')) {
-      // Use single quotes and escape any single quotes inside
-      return `'${value.replace(/'/g, "''")}'`;
+    if (value.includes('"') || value.includes("'") || value.includes(':') || value.includes('#') || value.includes('\\')) {
+      // Escape backslashes first, then single quotes
+      const escaped = value.replace(/\\/g, '\\\\').replace(/'/g, "''");
+      return `'${escaped}'`;
     }
     return value;
   }
