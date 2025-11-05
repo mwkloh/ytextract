@@ -80,33 +80,21 @@ export class YouTubeService {
         throw new Error('No valid caption track found');
       }
 
-      // Fetch the actual transcript XML
-      // Add format parameter to get proper XML response
+      // Fetch the actual transcript in JSON format
+      // Use fmt=json3 to get structured JSON response with segments
       let transcriptUrl = captionTrack.baseUrl;
 
-      console.log('Original URL:', transcriptUrl);
-      console.log('Has fmt param?', transcriptUrl.includes('fmt='));
-
+      // Add &fmt=json3 to get JSON format instead of XML
       if (!transcriptUrl.includes('fmt=')) {
-        transcriptUrl += transcriptUrl.includes('?') ? '&fmt=srv3' : '?fmt=srv3';
-        console.log('Added fmt=srv3, new URL:', transcriptUrl);
+        transcriptUrl += '&fmt=json3';
       }
 
-      console.log('Final fetching URL:', transcriptUrl);
       const transcriptResponse = await requestUrl({ url: transcriptUrl });
-      const transcriptXml = transcriptResponse.text;
+      const transcriptData = JSON.parse(transcriptResponse.text);
 
-      console.log('Transcript XML length:', transcriptXml.length);
-      console.log('First 200 chars of XML:', transcriptXml.substring(0, 200));
-
-      // Parse the XML to extract transcript segments
-      const timestamped = this.parseTranscriptXml(transcriptXml);
+      // Parse JSON3 format which contains events array with segment data
+      const timestamped = this.parseTranscriptJson(transcriptData);
       const plain = timestamped.map(item => item.text).join(' ');
-
-      console.log('Parsed segments:', timestamped.length);
-      console.log('First segment:', timestamped[0]);
-      console.log('Plain transcript length:', plain.length);
-      console.log('Plain transcript start:', plain.substring(0, 200));
 
       return { plain, timestamped };
     } catch (error) {
@@ -115,49 +103,42 @@ export class YouTubeService {
   }
 
   /**
-   * Parse YouTube transcript XML format
+   * Parse YouTube transcript JSON3 format
    */
-  private parseTranscriptXml(xml: string): TranscriptSegment[] {
+  private parseTranscriptJson(data: any): TranscriptSegment[] {
     const segments: TranscriptSegment[] = [];
 
-    // Match all <text> tags with their attributes
-    const textRegex = /<text start="([^"]+)" dur="([^"]+)"[^>]*>([^<]*)<\/text>/g;
-    let match;
+    if (!data.events) {
+      return segments;
+    }
 
-    while ((match = textRegex.exec(xml)) !== null) {
-      const offset = parseFloat(match[1]) * 1000; // Convert to milliseconds
-      const duration = parseFloat(match[2]) * 1000; // Convert to milliseconds
-      const text = this.decodeXMLEntities(match[3]);
+    for (const event of data.events) {
+      // Skip events without segments (timing markers, etc.)
+      if (!event.segs) {
+        continue;
+      }
 
-      segments.push({
-        text: text.trim(),
-        offset: Math.round(offset),
-        duration: Math.round(duration)
-      });
+      const startTime = event.tStartMs || 0;
+      const duration = event.dDurationMs || 0;
+
+      // Combine all segment texts
+      const text = event.segs
+        .map((seg: any) => seg.utf8 || '')
+        .join('')
+        .replace(/[\u200B-\u200D\uFEFF]/g, '') // Remove zero-width spaces
+        .replace(/\s+/g, ' ') // Normalize whitespace
+        .trim();
+
+      if (text) {
+        segments.push({
+          text,
+          offset: startTime,
+          duration
+        });
+      }
     }
 
     return segments;
-  }
-
-  /**
-   * Decode XML entities in transcript text
-   */
-  private decodeXMLEntities(text: string): string {
-    const entities: Record<string, string> = {
-      '&amp;': '&',
-      '&lt;': '<',
-      '&gt;': '>',
-      '&quot;': '"',
-      '&#39;': "'",
-      '&apos;': "'"
-    };
-
-    let decoded = text;
-    for (const [entity, char] of Object.entries(entities)) {
-      decoded = decoded.replace(new RegExp(entity, 'g'), char);
-    }
-
-    return decoded;
   }
 
   /**
