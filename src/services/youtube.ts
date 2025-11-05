@@ -81,8 +81,14 @@ export class YouTubeService {
       }
 
       // Fetch the actual transcript XML
-      console.log('Fetching transcript from:', captionTrack.baseUrl.substring(0, 100));
-      const transcriptResponse = await requestUrl({ url: captionTrack.baseUrl });
+      // Add format parameter to get proper XML response
+      let transcriptUrl = captionTrack.baseUrl;
+      if (!transcriptUrl.includes('fmt=')) {
+        transcriptUrl += transcriptUrl.includes('?') ? '&fmt=srv3' : '?fmt=srv3';
+      }
+
+      console.log('Fetching transcript from:', transcriptUrl.substring(0, 150));
+      const transcriptResponse = await requestUrl({ url: transcriptUrl });
       const transcriptXml = transcriptResponse.text;
 
       console.log('Transcript XML length:', transcriptXml.length);
