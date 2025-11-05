@@ -287,6 +287,9 @@ export class YTExtractSettingTab extends PluginSettingTab {
           } else if (value === 'openrouter') {
             this.plugin.settings.llmEndpoint = 'https://openrouter.ai/api/v1/chat/completions';
             this.plugin.settings.llmModel = 'anthropic/claude-3.5-haiku';
+          } else if (value === 'custom') {
+            this.plugin.settings.llmEndpoint = '';
+            this.plugin.settings.llmModel = '';
           }
 
           await this.plugin.saveSettings();
