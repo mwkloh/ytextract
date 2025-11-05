@@ -33,7 +33,7 @@ export class YouTubeService {
 
   /**
    * Fetch transcript using Innertube API (YouTube's internal API)
-   * This works for auto-generated (ASR) captions when timedtext API fails
+   * This is the primary method as TimedText API consistently returns empty
    */
   private async fetchTranscriptViaInnertube(videoId: string): Promise<{
     plain: string;
@@ -117,142 +117,15 @@ export class YouTubeService {
   }
 
   /**
-   * Fetch transcript for a video using Obsidian's requestUrl (CORS-safe)
+   * Fetch transcript for a video using Innertube API
+   * Bypasses TimedText API which consistently returns empty responses
    */
   async fetchTranscript(videoId: string): Promise<{
     plain: string;
     timestamped: TranscriptSegment[]
   }> {
-    try {
-      // First, get the video page to find the caption tracks
-      const videoUrl = `https://www.youtube.com/watch?v=${videoId}`;
-      const response = await requestUrl({ url: videoUrl });
-      const html = response.text;
-
-      // Extract caption tracks URL from the page
-      // Need to find the full captionTracks array with proper bracket matching
-      const captionTracksStart = html.indexOf('"captionTracks":[');
-      if (captionTracksStart === -1) {
-        throw new Error('No captions available for this video');
-      }
-
-      // Find the matching closing bracket
-      let bracketCount = 0;
-      let i = captionTracksStart + '"captionTracks":'.length;
-      const startIdx = i;
-
-      for (; i < html.length; i++) {
-        if (html[i] === '[') bracketCount++;
-        if (html[i] === ']') bracketCount--;
-        if (bracketCount === 0) break;
-      }
-
-      const captionTracksJson = html.substring(startIdx, i + 1);
-      console.log('Caption tracks JSON length:', captionTracksJson.length);
-
-      const captionTracks = JSON.parse(captionTracksJson);
-
-      console.log('Total caption tracks:', captionTracks.length);
-      console.log('Caption tracks:', captionTracks.map((t: any) => ({
-        lang: t.languageCode,
-        name: t.name?.simpleText,
-        kind: t.kind
-      })));
-
-      // Prioritize manual captions over auto-generated (ASR)
-      // Manual captions don't have kind=asr and work reliably
-      const manualTracks = captionTracks.filter((track: any) => track.kind !== 'asr');
-      const asrTracks = captionTracks.filter((track: any) => track.kind === 'asr');
-
-      console.log('Manual tracks:', manualTracks.length);
-      console.log('ASR tracks:', asrTracks.length);
-
-      // Try manual English first, then manual any language, then ASR English, then ASR any
-      let captionTrack = manualTracks.find((track: any) =>
-        track.languageCode === 'en' || track.languageCode.startsWith('en')
-      );
-
-      if (!captionTrack && manualTracks.length > 0) {
-        captionTrack = manualTracks[0];
-        console.log('Using first manual track:', captionTrack.languageCode);
-      }
-
-      if (!captionTrack) {
-        captionTrack = asrTracks.find((track: any) =>
-          track.languageCode === 'en' || track.languageCode.startsWith('en')
-        );
-        console.log('Falling back to ASR English');
-      }
-
-      if (!captionTrack && asrTracks.length > 0) {
-        captionTrack = asrTracks[0];
-        console.log('Using first ASR track:', captionTrack.languageCode);
-      }
-
-      if (!captionTrack || !captionTrack.baseUrl) {
-        throw new Error('No valid caption track found');
-      }
-
-      console.log('Selected track:', {
-        lang: captionTrack.languageCode,
-        kind: captionTrack.kind,
-        hasBaseUrl: !!captionTrack.baseUrl
-      });
-
-      // Use the exact baseUrl from YouTube WITHOUT modifications
-      // The URL already has the correct format parameter and cryptographic signature
-      // Adding any parameters will invalidate the signature and return empty response
-      const transcriptUrl = captionTrack.baseUrl;
-
-      console.log('Caption track baseUrl:', transcriptUrl);
-      console.log('Has fmt parameter?', transcriptUrl.includes('fmt='));
-      console.log('Fetching transcript from:', transcriptUrl.substring(0, 150) + '...');
-
-      const transcriptResponse = await requestUrl({ url: transcriptUrl });
-
-      console.log('Response status:', transcriptResponse.status);
-      console.log('Response length:', transcriptResponse.text.length);
-      console.log('First 200 chars:', transcriptResponse.text.substring(0, 200));
-
-      if (transcriptResponse.text.length === 0) {
-        console.log('Timedtext API returned empty, trying Innertube API...');
-        // Fall back to Innertube API for ASR captions
-        return await this.fetchTranscriptViaInnertube(videoId);
-      }
-
-      let timestamped: TranscriptSegment[];
-
-      // Try to detect format and parse accordingly
-      const responseText = transcriptResponse.text.trim();
-      if (responseText.startsWith('{') || responseText.startsWith('[')) {
-        // JSON format
-        console.log('Detected JSON format');
-        try {
-          const transcriptData = JSON.parse(responseText);
-          timestamped = this.parseTranscriptJson(transcriptData);
-        } catch (parseError) {
-          console.error('JSON parse error:', parseError);
-          throw new Error(`Invalid JSON response: ${parseError.message}`);
-        }
-      } else if (responseText.startsWith('<')) {
-        // XML format
-        console.log('Detected XML format');
-        timestamped = this.parseTranscriptXml(responseText);
-      } else {
-        console.error('Unknown format, first 50 chars:', responseText.substring(0, 50));
-        throw new Error('Unknown transcript format from YouTube');
-      }
-
-      const plain = timestamped.map(item => item.text).join(' ');
-
-      console.log('Parsed segments:', timestamped.length);
-      console.log('Plain text length:', plain.length);
-
-      return { plain, timestamped };
-    } catch (error) {
-      console.error('Full error:', error);
-      throw new Error(`Failed to fetch transcript: ${error.message}`);
-    }
+    console.log('Fetching transcript using Innertube API directly');
+    return await this.fetchTranscriptViaInnertube(videoId);
   }
 
   /**
