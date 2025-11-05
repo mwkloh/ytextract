@@ -308,3 +308,255 @@ export class LlamaCppProvider extends BaseLLMProvider {
     return `${systemPrompt}\n\nTranscript:\n${transcript}\n\nPlease provide: ${outputs.join(', ')}`;
   }
 }
+
+export class OpenAIProvider extends BaseLLMProvider {
+  name = 'OpenAI';
+  defaultEndpoint = 'https://api.openai.com/v1/chat/completions';
+
+  async testConnection(): Promise<boolean> {
+    try {
+      if (!this.settings.llmApiKey) {
+        throw new Error('API key is required');
+      }
+
+      const response = await this.fetchWithTimeout(
+        'https://api.openai.com/v1/models',
+        {
+          method: 'GET',
+          headers: {
+            'Authorization': `Bearer ${this.settings.llmApiKey}`
+          }
+        },
+        5000
+      );
+      return response.ok;
+    } catch {
+      return false;
+    }
+  }
+
+  async generateSummary(transcript: string, prompt: string): Promise<LLMResponse> {
+    if (!this.settings.llmApiKey) {
+      throw new Error('OpenAI API key is required');
+    }
+
+    const endpoint = this.settings.llmEndpoint || this.defaultEndpoint;
+
+    const requestBody = {
+      model: this.settings.llmModel || 'gpt-4o-mini',
+      messages: [
+        { role: 'system', content: prompt },
+        { role: 'user', content: this.buildUserPrompt(transcript) }
+      ],
+      temperature: 0.7
+    };
+
+    try {
+      const response = await this.fetchWithTimeout(
+        endpoint,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${this.settings.llmApiKey}`
+          },
+          body: JSON.stringify(requestBody)
+        },
+        this.settings.requestTimeout
+      );
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`OpenAI request failed (${response.status}): ${response.statusText}. Details: ${errorText}`);
+      }
+
+      const data = await response.json();
+
+      if (!data.choices || !data.choices[0] || !data.choices[0].message) {
+        throw new Error(`OpenAI returned invalid response structure: ${JSON.stringify(data)}`);
+      }
+
+      const content = data.choices[0].message.content;
+      return this.parseLLMOutput(content);
+    } catch (error) {
+      throw new Error(`OpenAI generation failed: ${error.message}`);
+    }
+  }
+
+  private buildUserPrompt(transcript: string): string {
+    const outputs = [];
+    if (this.settings.templateGeneratorSections.includeSummary) outputs.push('summary');
+    if (this.settings.templateGeneratorSections.includeKeyPoints) outputs.push('key points');
+    if (this.settings.templateGeneratorSections.includeTags) outputs.push('tags');
+    if (this.settings.templateGeneratorSections.includeQuestions) outputs.push('questions');
+
+    return `Transcript:\n${transcript}\n\nPlease provide: ${outputs.join(', ')}`;
+  }
+}
+
+export class AnthropicProvider extends BaseLLMProvider {
+  name = 'Anthropic';
+  defaultEndpoint = 'https://api.anthropic.com/v1/messages';
+
+  async testConnection(): Promise<boolean> {
+    try {
+      if (!this.settings.llmApiKey) {
+        throw new Error('API key is required');
+      }
+
+      // Anthropic doesn't have a simple health check endpoint
+      // We'll just validate that the API key is present
+      return this.settings.llmApiKey.startsWith('sk-ant-');
+    } catch {
+      return false;
+    }
+  }
+
+  async generateSummary(transcript: string, prompt: string): Promise<LLMResponse> {
+    if (!this.settings.llmApiKey) {
+      throw new Error('Anthropic API key is required');
+    }
+
+    const endpoint = this.settings.llmEndpoint || this.defaultEndpoint;
+
+    const requestBody = {
+      model: this.settings.llmModel || 'claude-3-5-haiku-20241022',
+      max_tokens: 1024,
+      messages: [
+        {
+          role: 'user',
+          content: `${prompt}\n\n${this.buildUserPrompt(transcript)}`
+        }
+      ]
+    };
+
+    try {
+      const response = await this.fetchWithTimeout(
+        endpoint,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'x-api-key': this.settings.llmApiKey,
+            'anthropic-version': '2023-06-01'
+          },
+          body: JSON.stringify(requestBody)
+        },
+        this.settings.requestTimeout
+      );
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`Anthropic request failed (${response.status}): ${response.statusText}. Details: ${errorText}`);
+      }
+
+      const data = await response.json();
+
+      if (!data.content || !data.content[0] || !data.content[0].text) {
+        throw new Error(`Anthropic returned invalid response structure: ${JSON.stringify(data)}`);
+      }
+
+      const content = data.content[0].text;
+      return this.parseLLMOutput(content);
+    } catch (error) {
+      throw new Error(`Anthropic generation failed: ${error.message}`);
+    }
+  }
+
+  private buildUserPrompt(transcript: string): string {
+    const outputs = [];
+    if (this.settings.templateGeneratorSections.includeSummary) outputs.push('summary');
+    if (this.settings.templateGeneratorSections.includeKeyPoints) outputs.push('key points');
+    if (this.settings.templateGeneratorSections.includeTags) outputs.push('tags');
+    if (this.settings.templateGeneratorSections.includeQuestions) outputs.push('questions');
+
+    return `Transcript:\n${transcript}\n\nPlease provide: ${outputs.join(', ')}`;
+  }
+}
+
+export class OpenRouterProvider extends BaseLLMProvider {
+  name = 'OpenRouter';
+  defaultEndpoint = 'https://openrouter.ai/api/v1/chat/completions';
+
+  async testConnection(): Promise<boolean> {
+    try {
+      if (!this.settings.llmApiKey) {
+        throw new Error('API key is required');
+      }
+
+      const response = await this.fetchWithTimeout(
+        'https://openrouter.ai/api/v1/models',
+        {
+          method: 'GET',
+          headers: {
+            'Authorization': `Bearer ${this.settings.llmApiKey}`
+          }
+        },
+        5000
+      );
+      return response.ok;
+    } catch {
+      return false;
+    }
+  }
+
+  async generateSummary(transcript: string, prompt: string): Promise<LLMResponse> {
+    if (!this.settings.llmApiKey) {
+      throw new Error('OpenRouter API key is required');
+    }
+
+    const endpoint = this.settings.llmEndpoint || this.defaultEndpoint;
+
+    const requestBody = {
+      model: this.settings.llmModel || 'anthropic/claude-3.5-haiku',
+      messages: [
+        { role: 'system', content: prompt },
+        { role: 'user', content: this.buildUserPrompt(transcript) }
+      ],
+      temperature: 0.7
+    };
+
+    try {
+      const response = await this.fetchWithTimeout(
+        endpoint,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${this.settings.llmApiKey}`,
+            'HTTP-Referer': 'https://github.com/mwkloh/ytextract',
+            'X-Title': 'YTextract'
+          },
+          body: JSON.stringify(requestBody)
+        },
+        this.settings.requestTimeout
+      );
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`OpenRouter request failed (${response.status}): ${response.statusText}. Details: ${errorText}`);
+      }
+
+      const data = await response.json();
+
+      if (!data.choices || !data.choices[0] || !data.choices[0].message) {
+        throw new Error(`OpenRouter returned invalid response structure: ${JSON.stringify(data)}`);
+      }
+
+      const content = data.choices[0].message.content;
+      return this.parseLLMOutput(content);
+    } catch (error) {
+      throw new Error(`OpenRouter generation failed: ${error.message}`);
+    }
+  }
+
+  private buildUserPrompt(transcript: string): string {
+    const outputs = [];
+    if (this.settings.templateGeneratorSections.includeSummary) outputs.push('summary');
+    if (this.settings.templateGeneratorSections.includeKeyPoints) outputs.push('key points');
+    if (this.settings.templateGeneratorSections.includeTags) outputs.push('tags');
+    if (this.settings.templateGeneratorSections.includeQuestions) outputs.push('questions');
+
+    return `Transcript:\n${transcript}\n\nPlease provide: ${outputs.join(', ')}`;
+  }
+}

@@ -14,10 +14,11 @@ export interface YTExtractSettings {
   includeThumbnailUrl: boolean;
 
   // LLM Configuration
-  llmProvider: 'ollama' | 'lmstudio' | 'llamacpp' | 'custom';
+  llmProvider: 'ollama' | 'lmstudio' | 'llamacpp' | 'openai' | 'anthropic' | 'openrouter' | 'custom';
   autoDetectEndpoint: boolean;
   llmEndpoint: string;
   llmModel: string;
+  llmApiKey: string;
   customSystemPrompt: string;
   requestTimeout: number;
 
@@ -52,6 +53,7 @@ export const DEFAULT_SETTINGS: YTExtractSettings = {
   autoDetectEndpoint: true,
   llmEndpoint: 'http://localhost:11434/api/generate',
   llmModel: 'llama2',
+  llmApiKey: '',
   customSystemPrompt: 'You are a helpful assistant that analyzes video transcripts. When provided with a transcript, please:\n\n1. Write a concise summary (2-3 sentences)\n2. Extract exactly 5 main key points in bullet format\n3. Suggest 3-5 relevant tags\n\nFormat your response clearly with labeled sections.',
   requestTimeout: 30000,
 

@@ -255,11 +255,14 @@ export class YTExtractSettingTab extends PluginSettingTab {
 
     new Setting(containerEl)
       .setName('LLM Provider')
-      .setDesc('Select your local LLM provider')
+      .setDesc('Select your LLM provider (cloud or local)')
       .addDropdown(dropdown => dropdown
-        .addOption('ollama', 'Ollama')
-        .addOption('lmstudio', 'LM Studio')
-        .addOption('llamacpp', 'llama.cpp')
+        .addOption('ollama', 'Ollama (Local)')
+        .addOption('lmstudio', 'LM Studio (Local)')
+        .addOption('llamacpp', 'llama.cpp (Local)')
+        .addOption('openai', 'OpenAI (Cloud)')
+        .addOption('anthropic', 'Anthropic (Cloud)')
+        .addOption('openrouter', 'OpenRouter (Cloud)')
         .addOption('custom', 'Custom')
         .setValue(this.plugin.settings.llmProvider)
         .onChange(async (value) => {
@@ -268,31 +271,68 @@ export class YTExtractSettingTab extends PluginSettingTab {
           // Update endpoint based on provider selection
           if (value === 'ollama') {
             this.plugin.settings.llmEndpoint = 'http://localhost:11434/api/generate';
+            this.plugin.settings.llmModel = 'llama2';
           } else if (value === 'lmstudio') {
             this.plugin.settings.llmEndpoint = 'http://localhost:1234/v1/chat/completions';
+            this.plugin.settings.llmModel = '';
           } else if (value === 'llamacpp') {
             this.plugin.settings.llmEndpoint = 'http://localhost:8080/completion';
+            this.plugin.settings.llmModel = '';
+          } else if (value === 'openai') {
+            this.plugin.settings.llmEndpoint = 'https://api.openai.com/v1/chat/completions';
+            this.plugin.settings.llmModel = 'gpt-4o-mini';
+          } else if (value === 'anthropic') {
+            this.plugin.settings.llmEndpoint = 'https://api.anthropic.com/v1/messages';
+            this.plugin.settings.llmModel = 'claude-3-5-haiku-20241022';
+          } else if (value === 'openrouter') {
+            this.plugin.settings.llmEndpoint = 'https://openrouter.ai/api/v1/chat/completions';
+            this.plugin.settings.llmModel = 'anthropic/claude-3.5-haiku';
           }
 
           await this.plugin.saveSettings();
           this.display();
         }));
 
-    new Setting(containerEl)
-      .setName('Auto-detect endpoint')
-      .setDesc('Automatically detect LLM endpoint')
-      .addToggle(toggle => toggle
-        .setValue(this.plugin.settings.autoDetectEndpoint)
-        .onChange(async (value) => {
-          this.plugin.settings.autoDetectEndpoint = value;
-          await this.plugin.saveSettings();
-        }));
+    // Show API key field for cloud providers
+    const isCloudProvider = ['openai', 'anthropic', 'openrouter'].includes(this.plugin.settings.llmProvider);
+
+    if (isCloudProvider) {
+      new Setting(containerEl)
+        .setName('API Key')
+        .setDesc('Your API key for the cloud provider')
+        .addText(text => text
+          .setPlaceholder('Enter your API key')
+          .setValue(this.plugin.settings.llmApiKey)
+          .onChange(async (value) => {
+            this.plugin.settings.llmApiKey = value;
+            await this.plugin.saveSettings();
+          })
+          .inputEl.type = 'password');
+    }
+
+    // Only show auto-detect for local providers
+    if (!isCloudProvider) {
+      new Setting(containerEl)
+        .setName('Auto-detect endpoint')
+        .setDesc('Automatically detect LLM endpoint')
+        .addToggle(toggle => toggle
+          .setValue(this.plugin.settings.autoDetectEndpoint)
+          .onChange(async (value) => {
+            this.plugin.settings.autoDetectEndpoint = value;
+            await this.plugin.saveSettings();
+          }));
+    }
 
     new Setting(containerEl)
       .setName('LLM Endpoint')
-      .setDesc('Custom endpoint URL for LLM')
+      .setDesc(isCloudProvider ? 'API endpoint URL (usually default is fine)' : 'Custom endpoint URL for local LLM')
       .addText(text => text
-        .setPlaceholder('http://localhost:11434/api/generate')
+        .setPlaceholder(
+          this.plugin.settings.llmProvider === 'openai' ? 'https://api.openai.com/v1/chat/completions' :
+          this.plugin.settings.llmProvider === 'anthropic' ? 'https://api.anthropic.com/v1/messages' :
+          this.plugin.settings.llmProvider === 'openrouter' ? 'https://openrouter.ai/api/v1/chat/completions' :
+          'http://localhost:11434/api/generate'
+        )
         .setValue(this.plugin.settings.llmEndpoint)
         .onChange(async (value) => {
           this.plugin.settings.llmEndpoint = value;
@@ -301,9 +341,14 @@ export class YTExtractSettingTab extends PluginSettingTab {
 
     new Setting(containerEl)
       .setName('Model name')
-      .setDesc('LLM model name to use')
+      .setDesc(isCloudProvider ? 'Model to use (e.g., gpt-4o-mini, claude-3-5-haiku-20241022)' : 'Local model name')
       .addText(text => text
-        .setPlaceholder('llama2')
+        .setPlaceholder(
+          this.plugin.settings.llmProvider === 'openai' ? 'gpt-4o-mini' :
+          this.plugin.settings.llmProvider === 'anthropic' ? 'claude-3-5-haiku-20241022' :
+          this.plugin.settings.llmProvider === 'openrouter' ? 'anthropic/claude-3.5-haiku' :
+          'llama2'
+        )
         .setValue(this.plugin.settings.llmModel)
         .onChange(async (value) => {
           this.plugin.settings.llmModel = value;

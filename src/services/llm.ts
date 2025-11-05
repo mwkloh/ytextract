@@ -1,5 +1,12 @@
 import { LLMProvider, LLMResponse, YTExtractSettings } from '../models/types';
-import { OllamaProvider, LMStudioProvider, LlamaCppProvider } from '../models/providers';
+import {
+  OllamaProvider,
+  LMStudioProvider,
+  LlamaCppProvider,
+  OpenAIProvider,
+  AnthropicProvider,
+  OpenRouterProvider
+} from '../models/providers';
 
 export class LLMService {
   private provider: LLMProvider;
@@ -19,6 +26,12 @@ export class LLMService {
         return new LMStudioProvider(this.settings);
       case 'llamacpp':
         return new LlamaCppProvider(this.settings);
+      case 'openai':
+        return new OpenAIProvider(this.settings);
+      case 'anthropic':
+        return new AnthropicProvider(this.settings);
+      case 'openrouter':
+        return new OpenRouterProvider(this.settings);
       default:
         return new OllamaProvider(this.settings);
     }
