@@ -32,6 +32,91 @@ export class YouTubeService {
   }
 
   /**
+   * Fetch transcript using Innertube API (YouTube's internal API)
+   * This works for auto-generated (ASR) captions when timedtext API fails
+   */
+  private async fetchTranscriptViaInnertube(videoId: string): Promise<{
+    plain: string;
+    timestamped: TranscriptSegment[];
+  }> {
+    console.log('Trying Innertube API for ASR captions...');
+
+    // Get initial player response with API key
+    const videoUrl = `https://www.youtube.com/watch?v=${videoId}`;
+    const pageResponse = await requestUrl({ url: videoUrl });
+    const html = pageResponse.text;
+
+    // Extract INNERTUBE_API_KEY
+    const apiKeyMatch = html.match(/"INNERTUBE_API_KEY":"([^"]+)"/);
+    if (!apiKeyMatch) {
+      throw new Error('Could not find Innertube API key');
+    }
+    const apiKey = apiKeyMatch[1];
+    console.log('Found Innertube API key');
+
+    // Call YouTube's internal API
+    const innertubeUrl = `https://www.youtube.com/youtubei/v1/player?key=${apiKey}`;
+    const requestBody = {
+      context: {
+        client: {
+          clientName: 'WEB',
+          clientVersion: '2.20231219.01.00'
+        }
+      },
+      videoId: videoId
+    };
+
+    const playerResponse = await requestUrl({
+      url: innertubeUrl,
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(requestBody)
+    });
+
+    const playerData = JSON.parse(playerResponse.text);
+
+    // Extract captions from player response
+    const captionTracks = playerData?.captions?.playerCaptionsTracklistRenderer?.captionTracks;
+    if (!captionTracks || captionTracks.length === 0) {
+      throw new Error('No captions found in Innertube response');
+    }
+
+    console.log('Innertube caption tracks:', captionTracks.length);
+
+    // Find English captions
+    let captionTrack = captionTracks.find((track: any) =>
+      track.languageCode === 'en' || track.languageCode.startsWith('en')
+    );
+
+    if (!captionTrack) {
+      captionTrack = captionTracks[0];
+    }
+
+    console.log('Selected Innertube track:', captionTrack.languageCode);
+
+    // Fetch transcript XML from baseUrl
+    const transcriptUrl = captionTrack.baseUrl;
+    const transcriptResponse = await requestUrl({ url: transcriptUrl });
+    const transcriptXml = transcriptResponse.text;
+
+    console.log('Innertube transcript length:', transcriptXml.length);
+
+    if (transcriptXml.length === 0) {
+      throw new Error('Empty transcript from Innertube API');
+    }
+
+    // Parse XML
+    const timestamped = this.parseTranscriptXml(transcriptXml);
+    const plain = timestamped.map(item => item.text).join(' ');
+
+    console.log('Innertube parsed segments:', timestamped.length);
+
+    return { plain, timestamped };
+  }
+
+  /**
    * Fetch transcript for a video using Obsidian's requestUrl (CORS-safe)
    */
   async fetchTranscript(videoId: string): Promise<{
@@ -67,39 +152,130 @@ export class YouTubeService {
 
       const captionTracks = JSON.parse(captionTracksJson);
 
-      // Find English captions (or first available)
-      let captionTrack = captionTracks.find((track: any) =>
+      console.log('Total caption tracks:', captionTracks.length);
+      console.log('Caption tracks:', captionTracks.map((t: any) => ({
+        lang: t.languageCode,
+        name: t.name?.simpleText,
+        kind: t.kind
+      })));
+
+      // Prioritize manual captions over auto-generated (ASR)
+      // Manual captions don't have kind=asr and work reliably
+      const manualTracks = captionTracks.filter((track: any) => track.kind !== 'asr');
+      const asrTracks = captionTracks.filter((track: any) => track.kind === 'asr');
+
+      console.log('Manual tracks:', manualTracks.length);
+      console.log('ASR tracks:', asrTracks.length);
+
+      // Try manual English first, then manual any language, then ASR English, then ASR any
+      let captionTrack = manualTracks.find((track: any) =>
         track.languageCode === 'en' || track.languageCode.startsWith('en')
       );
 
+      if (!captionTrack && manualTracks.length > 0) {
+        captionTrack = manualTracks[0];
+        console.log('Using first manual track:', captionTrack.languageCode);
+      }
+
       if (!captionTrack) {
-        captionTrack = captionTracks[0]; // Use first available if no English
+        captionTrack = asrTracks.find((track: any) =>
+          track.languageCode === 'en' || track.languageCode.startsWith('en')
+        );
+        console.log('Falling back to ASR English');
+      }
+
+      if (!captionTrack && asrTracks.length > 0) {
+        captionTrack = asrTracks[0];
+        console.log('Using first ASR track:', captionTrack.languageCode);
       }
 
       if (!captionTrack || !captionTrack.baseUrl) {
         throw new Error('No valid caption track found');
       }
 
-      // Fetch the actual transcript in JSON format
-      // Use fmt=json3 to get structured JSON response with segments
-      let transcriptUrl = captionTrack.baseUrl;
+      console.log('Selected track:', {
+        lang: captionTrack.languageCode,
+        kind: captionTrack.kind,
+        hasBaseUrl: !!captionTrack.baseUrl
+      });
 
-      // Add &fmt=json3 to get JSON format instead of XML
-      if (!transcriptUrl.includes('fmt=')) {
-        transcriptUrl += '&fmt=json3';
-      }
+      // Use the exact baseUrl from YouTube WITHOUT modifications
+      // The URL already has the correct format parameter and cryptographic signature
+      // Adding any parameters will invalidate the signature and return empty response
+      const transcriptUrl = captionTrack.baseUrl;
+
+      console.log('Caption track baseUrl:', transcriptUrl);
+      console.log('Has fmt parameter?', transcriptUrl.includes('fmt='));
+      console.log('Fetching transcript from:', transcriptUrl.substring(0, 150) + '...');
 
       const transcriptResponse = await requestUrl({ url: transcriptUrl });
-      const transcriptData = JSON.parse(transcriptResponse.text);
 
-      // Parse JSON3 format which contains events array with segment data
-      const timestamped = this.parseTranscriptJson(transcriptData);
+      console.log('Response status:', transcriptResponse.status);
+      console.log('Response length:', transcriptResponse.text.length);
+      console.log('First 200 chars:', transcriptResponse.text.substring(0, 200));
+
+      if (transcriptResponse.text.length === 0) {
+        console.log('Timedtext API returned empty, trying Innertube API...');
+        // Fall back to Innertube API for ASR captions
+        return await this.fetchTranscriptViaInnertube(videoId);
+      }
+
+      let timestamped: TranscriptSegment[];
+
+      // Try to detect format and parse accordingly
+      const responseText = transcriptResponse.text.trim();
+      if (responseText.startsWith('{') || responseText.startsWith('[')) {
+        // JSON format
+        console.log('Detected JSON format');
+        try {
+          const transcriptData = JSON.parse(responseText);
+          timestamped = this.parseTranscriptJson(transcriptData);
+        } catch (parseError) {
+          console.error('JSON parse error:', parseError);
+          throw new Error(`Invalid JSON response: ${parseError.message}`);
+        }
+      } else if (responseText.startsWith('<')) {
+        // XML format
+        console.log('Detected XML format');
+        timestamped = this.parseTranscriptXml(responseText);
+      } else {
+        console.error('Unknown format, first 50 chars:', responseText.substring(0, 50));
+        throw new Error('Unknown transcript format from YouTube');
+      }
+
       const plain = timestamped.map(item => item.text).join(' ');
+
+      console.log('Parsed segments:', timestamped.length);
+      console.log('Plain text length:', plain.length);
 
       return { plain, timestamped };
     } catch (error) {
+      console.error('Full error:', error);
       throw new Error(`Failed to fetch transcript: ${error.message}`);
     }
+  }
+
+  /**
+   * Parse YouTube transcript XML format
+   */
+  private parseTranscriptXml(xml: string): TranscriptSegment[] {
+    const segments: TranscriptSegment[] = [];
+    const textRegex = /<text start="([^"]+)" dur="([^"]+)"[^>]*>([^<]*)<\/text>/g;
+    let match;
+
+    while ((match = textRegex.exec(xml)) !== null) {
+      const offset = parseFloat(match[1]) * 1000; // Convert to milliseconds
+      const duration = parseFloat(match[2]) * 1000;
+      const text = this.decodeXMLEntities(match[3]);
+
+      segments.push({
+        text: text.trim(),
+        offset: Math.round(offset),
+        duration: Math.round(duration)
+      });
+    }
+
+    return segments;
   }
 
   /**
@@ -139,6 +315,27 @@ export class YouTubeService {
     }
 
     return segments;
+  }
+
+  /**
+   * Decode XML entities in transcript text
+   */
+  private decodeXMLEntities(text: string): string {
+    const entities: Record<string, string> = {
+      '&amp;': '&',
+      '&lt;': '<',
+      '&gt;': '>',
+      '&quot;': '"',
+      '&#39;': "'",
+      '&apos;': "'"
+    };
+
+    let decoded = text;
+    for (const [entity, char] of Object.entries(entities)) {
+      decoded = decoded.replace(new RegExp(entity, 'g'), char);
+    }
+
+    return decoded;
   }
 
   /**

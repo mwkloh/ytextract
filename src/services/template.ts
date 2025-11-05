@@ -36,7 +36,11 @@ export class TemplateService {
       // LLM outputs
       llm_summary: llmResponse.summary || '',
       llm_key_points: this.formatKeyPoints(llmResponse.keyPoints),
-      generated_tags: this.formatTags(llmResponse.tags),
+      generated_tags: (() => {
+        const formattedTags = this.formatTags(llmResponse.tags);
+        console.log('Formatted tags for template:', formattedTags);
+        return formattedTags;
+      })(),
       llm_questions: this.formatQuestions(llmResponse.questions),
 
       // Transcript
@@ -57,9 +61,19 @@ export class TemplateService {
     let template: string;
 
     if (this.settings.templatePath) {
+      console.log('Using custom template:', this.settings.templatePath);
       template = await this.loadCustomTemplate();
     } else {
+      console.log('Using default template');
       template = await this.loadDefaultTemplate();
+    }
+
+    // Check if template contains generated_tags variable
+    const hasTagsVariable = template.includes('{{generated_tags}}');
+    console.log('Template contains {{generated_tags}} variable:', hasTagsVariable);
+
+    if (!hasTagsVariable && data.generated_tags) {
+      console.warn('⚠️ Tags were generated but template does not contain {{generated_tags}} variable!');
     }
 
     return this.replaceVariables(template, data);
@@ -135,11 +149,23 @@ tags: {{generated_tags}}
   }
 
   /**
-   * Format tags as comma-separated list
+   * Format tags with # prefix and convert to single words
    */
   private formatTags(tags: string[] | undefined): string {
     if (!tags || tags.length === 0) return '';
-    return tags.join(', ');
+
+    return tags
+      .map(tag => {
+        // Remove special characters and convert to single word
+        const singleWord = tag
+          .toLowerCase()
+          .replace(/[^\w\s-]/g, '') // Remove special chars except spaces and hyphens
+          .replace(/\s+/g, '-')      // Replace spaces with hyphens
+          .replace(/^-+|-+$/g, '');  // Remove leading/trailing hyphens
+
+        return `#${singleWord}`;
+      })
+      .join(' ');
   }
 
   /**

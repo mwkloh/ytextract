@@ -39,16 +39,20 @@ export abstract class BaseLLMProvider implements LLMProvider {
   protected parseLLMOutput(rawResponse: string): LLMResponse {
     const response: LLMResponse = {};
 
+    console.log('Raw LLM response (first 500 chars):', rawResponse.substring(0, 500));
+
     if (this.settings.outputSummary) {
       response.summary = this.extractSection(rawResponse, 'summary');
     }
 
     if (this.settings.outputKeyPoints) {
       response.keyPoints = this.extractListItems(rawResponse, 'key points');
+      console.log('Extracted key points:', response.keyPoints);
     }
 
     if (this.settings.outputTags) {
       response.tags = this.extractListItems(rawResponse, 'tags');
+      console.log('Extracted tags:', response.tags);
     }
 
     if (this.settings.outputQuestions) {

@@ -44,7 +44,17 @@ export class ExtractionService {
       let llmResponse;
       try {
         this.statusBar.update('Generating summary...');
-        llmResponse = await this.llmService.generateSummary(youtubeData.transcript);
+        // Truncate very long transcripts for LLM processing (keep full for note)
+        const maxLLMLength = 15000; // ~15K characters
+        const truncatedTranscript = youtubeData.transcript.length > maxLLMLength
+          ? youtubeData.transcript.substring(0, maxLLMLength) + '\n\n[Transcript truncated for LLM processing]'
+          : youtubeData.transcript;
+
+        if (youtubeData.transcript.length > maxLLMLength) {
+          console.log(`Transcript truncated from ${youtubeData.transcript.length} to ${maxLLMLength} chars for LLM`);
+        }
+
+        llmResponse = await this.llmService.generateSummary(truncatedTranscript);
       } catch (error) {
         llmResponse = await this.handleLLMError(error as Error);
       }
