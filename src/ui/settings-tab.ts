@@ -303,14 +303,16 @@ export class YTExtractSettingTab extends PluginSettingTab {
       new Setting(containerEl)
         .setName('API Key')
         .setDesc('Your API key for the cloud provider')
-        .addText(text => text
-          .setPlaceholder('Enter your API key')
-          .setValue(this.plugin.settings.llmApiKey)
-          .onChange(async (value) => {
-            this.plugin.settings.llmApiKey = value;
-            await this.plugin.saveSettings();
-          })
-          .inputEl.type = 'password');
+        .addText(text => {
+          text
+            .setPlaceholder('Enter your API key')
+            .setValue(this.plugin.settings.llmApiKey)
+            .onChange(async (value) => {
+              this.plugin.settings.llmApiKey = value;
+              await this.plugin.saveSettings();
+            });
+          text.inputEl.type = 'password';
+        });
     }
 
     // Only show auto-detect for local providers
