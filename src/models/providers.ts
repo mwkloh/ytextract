@@ -200,13 +200,25 @@ export class LMStudioProvider extends BaseLLMProvider {
       );
 
       if (!response.ok) {
-        throw new Error(`LM Studio request failed: ${response.statusText}`);
+        const errorText = await response.text();
+        throw new Error(`LM Studio request failed (${response.status}): ${response.statusText}. Details: ${errorText}`);
       }
 
       const data = await response.json();
+
+      if (!data.choices || !data.choices[0] || !data.choices[0].message) {
+        throw new Error(`LM Studio returned invalid response structure: ${JSON.stringify(data)}`);
+      }
+
       const content = data.choices[0].message.content;
       return this.parseLLMOutput(content);
     } catch (error) {
+      console.error('LM Studio detailed error:', {
+        endpoint,
+        model: this.settings.llmModel,
+        error: error.message,
+        stack: error.stack
+      });
       throw new Error(`LM Studio generation failed: ${error.message}`);
     }
   }

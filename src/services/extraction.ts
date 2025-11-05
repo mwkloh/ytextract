@@ -113,12 +113,21 @@ export class ExtractionService {
   private async handleLLMError(error: Error): Promise<any> {
     const behavior = this.settings.errorBehavior;
 
+    // Log detailed error for debugging
+    console.error('LLM Error Details:', {
+      message: error.message,
+      stack: error.stack,
+      provider: this.settings.llmProvider,
+      endpoint: this.settings.llmEndpoint,
+      model: this.settings.llmModel
+    });
+
     if (behavior === 'stop') {
       throw new Error(`LLM generation failed: ${error.message}`);
     }
 
     if (behavior === 'partial' || behavior === 'skip') {
-      new Notice('Warning: LLM unavailable, creating note without summary');
+      new Notice(`Warning: LLM error - ${error.message}. Creating note without summary.`);
       return {
         summary: behavior === 'skip' ? 'LLM unavailable' : '',
         keyPoints: [],
