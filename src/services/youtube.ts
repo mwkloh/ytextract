@@ -83,11 +83,16 @@ export class YouTubeService {
       // Fetch the actual transcript XML
       // Add format parameter to get proper XML response
       let transcriptUrl = captionTrack.baseUrl;
+
+      console.log('Original URL:', transcriptUrl);
+      console.log('Has fmt param?', transcriptUrl.includes('fmt='));
+
       if (!transcriptUrl.includes('fmt=')) {
         transcriptUrl += transcriptUrl.includes('?') ? '&fmt=srv3' : '?fmt=srv3';
+        console.log('Added fmt=srv3, new URL:', transcriptUrl);
       }
 
-      console.log('Fetching transcript from:', transcriptUrl.substring(0, 150));
+      console.log('Final fetching URL:', transcriptUrl);
       const transcriptResponse = await requestUrl({ url: transcriptUrl });
       const transcriptXml = transcriptResponse.text;
 
