@@ -63,10 +63,12 @@ export class LLMService {
 
   /**
    * Generate summary and other outputs
-   * Auto-detects provider if auto-detect is enabled
+   * Auto-detects provider if auto-detect is enabled AND provider is set to 'custom'
    */
   async generateSummary(transcript: string): Promise<LLMResponse> {
-    if (this.settings.autoDetectEndpoint) {
+    // Only auto-detect if explicitly requested (custom provider)
+    // Otherwise use the user's selected provider
+    if (this.settings.autoDetectEndpoint && this.settings.llmProvider === 'custom') {
       const detectedProvider = await this.autoDetect();
       if (detectedProvider) {
         this.provider = detectedProvider;
