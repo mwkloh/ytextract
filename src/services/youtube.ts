@@ -253,12 +253,14 @@ export class YouTubeService {
       const html = response.text;
 
       // Parse metadata from YouTube page HTML using regex
-      const title = this.extractFromHTML(html, /"title":"([^"]+)"/) || `Video ${videoId}`;
-      const channel = this.extractFromHTML(html, /"author":"([^"]+)"/) || 'Unknown Channel';
+      // Use (?:\\.|[^"\\])+ to match escaped quotes (\") and other characters
+      const title = this.extractFromHTML(html, /"title":"((?:\\.|[^"\\])+)"/) || `Video ${videoId}`;
+      console.log('Extracted title from YouTube HTML:', title);
+      const channel = this.extractFromHTML(html, /"author":"((?:\\.|[^"\\])+)"/) || 'Unknown Channel';
       const lengthSeconds = this.extractFromHTML(html, /"lengthSeconds":"(\d+)"/) || '0';
       const viewCount = this.extractFromHTML(html, /"viewCount":"(\d+)"/) || '0';
-      const publishDate = this.extractFromHTML(html, /"publishDate":"([^"]+)"/) || new Date().toISOString().split('T')[0];
-      const description = this.extractFromHTML(html, /"shortDescription":"([^"]+)"/) || '';
+      const publishDate = this.extractFromHTML(html, /"publishDate":"((?:\\.|[^"\\])+)"/) || new Date().toISOString().split('T')[0];
+      const description = this.extractFromHTML(html, /"shortDescription":"((?:\\.|[^"\\])+)"/) || '';
 
       return {
         title: this.decodeHTML(title),
@@ -309,12 +311,14 @@ export class YouTubeService {
       '&quot;': '"',
       '&#39;': "'",
       '\\u0026': '&',
-      '\\n': '\n'
+      '\\n': '\n',
+      '\\"': '"',  // Escaped double quote in JSON
+      "\\'": "'"   // Escaped single quote in JSON
     };
 
     let decoded = text;
     for (const [entity, char] of Object.entries(entities)) {
-      decoded = decoded.replace(new RegExp(entity, 'g'), char);
+      decoded = decoded.replace(new RegExp(entity.replace(/\\/g, '\\\\'), 'g'), char);
     }
 
     return decoded;
