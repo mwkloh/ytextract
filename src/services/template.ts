@@ -118,11 +118,11 @@ duration: {{duration}}
    * Escape value for safe use in YAML frontmatter
    */
   private escapeYAMLValue(value: string): string {
-    // If value contains special YAML characters, wrap in quotes and escape internal quotes
+    // If value contains special YAML characters, wrap in double quotes
     if (value.includes('"') || value.includes("'") || value.includes(':') || value.includes('#') || value.includes('\\')) {
-      // Escape backslashes first, then single quotes
-      const escaped = value.replace(/\\/g, '\\\\').replace(/'/g, "''");
-      return `'${escaped}'`;
+      // Escape backslashes and double quotes for double-quoted YAML strings
+      const escaped = value.replace(/\\/g, '\\\\').replace(/"/g, '\\"');
+      return `"${escaped}"`;
     }
     return value;
   }
