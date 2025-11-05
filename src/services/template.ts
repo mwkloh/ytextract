@@ -37,9 +37,14 @@ export class TemplateService {
       llm_summary: llmResponse.summary || '',
       llm_key_points: this.formatKeyPoints(llmResponse.keyPoints),
       generated_tags: (() => {
-        const formattedTags = this.formatTags(llmResponse.tags);
-        console.log('Formatted tags for template:', formattedTags);
-        return formattedTags;
+        const yamlTags = this.formatTagsYAML(llmResponse.tags);
+        console.log('Formatted tags (YAML) for template:', yamlTags);
+        return yamlTags;
+      })(),
+      generated_tags_hashtags: (() => {
+        const hashtagTags = this.formatTagsHashtags(llmResponse.tags);
+        console.log('Formatted tags (hashtags) for template:', hashtagTags);
+        return hashtagTags;
       })(),
       llm_questions: this.formatQuestions(llmResponse.questions),
 
@@ -149,9 +154,30 @@ tags: {{generated_tags}}
   }
 
   /**
-   * Format tags with # prefix and convert to single words
+   * Format tags for YAML frontmatter (array format)
    */
-  private formatTags(tags: string[] | undefined): string {
+  private formatTagsYAML(tags: string[] | undefined): string {
+    if (!tags || tags.length === 0) return '';
+
+    const formattedTags = tags
+      .map(tag => {
+        // Remove special characters and convert to single word
+        return tag
+          .toLowerCase()
+          .replace(/[^\w\s-]/g, '') // Remove special chars except spaces and hyphens
+          .replace(/\s+/g, '-')      // Replace spaces with hyphens
+          .replace(/^-+|-+$/g, '');  // Remove leading/trailing hyphens
+      })
+      .filter(tag => tag.length > 0);
+
+    // Format as YAML array for frontmatter
+    return '\n' + formattedTags.map(tag => `  - ${tag}`).join('\n');
+  }
+
+  /**
+   * Format tags with # prefix for document body
+   */
+  private formatTagsHashtags(tags: string[] | undefined): string {
     if (!tags || tags.length === 0) return '';
 
     return tags

@@ -129,7 +129,8 @@ export interface TemplateData {
   // LLM outputs
   llm_summary: string;
   llm_key_points: string;
-  generated_tags: string;
+  generated_tags: string; // YAML array format for frontmatter
+  generated_tags_hashtags: string; // Hashtag format for document body
   llm_questions: string;
 
   // Transcript

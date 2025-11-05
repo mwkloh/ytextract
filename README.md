@@ -116,8 +116,11 @@ Available variables for custom templates:
 
 - `{{llm_summary}}` - AI-generated summary
 - `{{llm_key_points}}` - Key points as bullet list
-- `{{generated_tags}}` - Suggested tags
+- `{{generated_tags}}` - Suggested tags (YAML array format for frontmatter)
+- `{{generated_tags_hashtags}}` - Suggested tags with # prefix (for document body)
 - `{{llm_questions}}` - Generated questions
+
+**Note on Tags:** Use `{{generated_tags}}` in YAML frontmatter to avoid "Type mismatch" errors. Use `{{generated_tags_hashtags}}` in the document body if you want hashtag-style tags like `#machine-learning #ai-development`.
 
 ### Transcript
 
