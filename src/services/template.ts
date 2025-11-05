@@ -36,16 +36,8 @@ export class TemplateService {
       // LLM outputs
       llm_summary: llmResponse.summary || '',
       llm_key_points: this.formatKeyPoints(llmResponse.keyPoints),
-      generated_tags: (() => {
-        const yamlTags = this.formatTagsYAML(llmResponse.tags);
-        console.log('Formatted tags (YAML) for template:', yamlTags);
-        return yamlTags;
-      })(),
-      generated_tags_hashtags: (() => {
-        const hashtagTags = this.formatTagsHashtags(llmResponse.tags);
-        console.log('Formatted tags (hashtags) for template:', hashtagTags);
-        return hashtagTags;
-      })(),
+      generated_tags: this.formatTagsYAML(llmResponse.tags),
+      generated_tags_hashtags: this.formatTagsHashtags(llmResponse.tags),
       llm_questions: this.formatQuestions(llmResponse.questions),
 
       // Transcript
@@ -66,19 +58,9 @@ export class TemplateService {
     let template: string;
 
     if (this.settings.templatePath) {
-      console.log('Using custom template:', this.settings.templatePath);
       template = await this.loadCustomTemplate();
     } else {
-      console.log('Using default template');
       template = await this.loadDefaultTemplate();
-    }
-
-    // Check if template contains generated_tags variable
-    const hasTagsVariable = template.includes('{{generated_tags}}');
-    console.log('Template contains {{generated_tags}} variable:', hasTagsVariable);
-
-    if (!hasTagsVariable && data.generated_tags) {
-      console.warn('⚠️ Tags were generated but template does not contain {{generated_tags}} variable!');
     }
 
     return this.replaceVariables(template, data);
