@@ -45,12 +45,27 @@ export class YouTubeService {
       const html = response.text;
 
       // Extract caption tracks URL from the page
-      const captionTracksMatch = html.match(/"captionTracks":(\[.*?\])/);
-      if (!captionTracksMatch) {
+      // Need to find the full captionTracks array with proper bracket matching
+      const captionTracksStart = html.indexOf('"captionTracks":[');
+      if (captionTracksStart === -1) {
         throw new Error('No captions available for this video');
       }
 
-      const captionTracks = JSON.parse(captionTracksMatch[1]);
+      // Find the matching closing bracket
+      let bracketCount = 0;
+      let i = captionTracksStart + '"captionTracks":'.length;
+      const startIdx = i;
+
+      for (; i < html.length; i++) {
+        if (html[i] === '[') bracketCount++;
+        if (html[i] === ']') bracketCount--;
+        if (bracketCount === 0) break;
+      }
+
+      const captionTracksJson = html.substring(startIdx, i + 1);
+      console.log('Caption tracks JSON length:', captionTracksJson.length);
+
+      const captionTracks = JSON.parse(captionTracksJson);
 
       // Find English captions (or first available)
       let captionTrack = captionTracks.find((track: any) =>
@@ -66,12 +81,21 @@ export class YouTubeService {
       }
 
       // Fetch the actual transcript XML
+      console.log('Fetching transcript from:', captionTrack.baseUrl.substring(0, 100));
       const transcriptResponse = await requestUrl({ url: captionTrack.baseUrl });
       const transcriptXml = transcriptResponse.text;
+
+      console.log('Transcript XML length:', transcriptXml.length);
+      console.log('First 200 chars of XML:', transcriptXml.substring(0, 200));
 
       // Parse the XML to extract transcript segments
       const timestamped = this.parseTranscriptXml(transcriptXml);
       const plain = timestamped.map(item => item.text).join(' ');
+
+      console.log('Parsed segments:', timestamped.length);
+      console.log('First segment:', timestamped[0]);
+      console.log('Plain transcript length:', plain.length);
+      console.log('Plain transcript start:', plain.substring(0, 200));
 
       return { plain, timestamped };
     } catch (error) {
