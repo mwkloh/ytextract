@@ -1,11 +1,12 @@
 # YouTube Transcript Extractor
 
-An Obsidian plugin that extracts YouTube video transcripts, generates AI-powered summaries using local LLMs, and saves formatted notes to your vault.
+An Obsidian plugin that extracts YouTube video transcripts, generates AI-powered summaries using local or cloud LLMs, and saves formatted notes to your vault.
 
 ## Features
 
 - Extract YouTube transcripts without API keys
-- Generate summaries using local LLMs (Ollama, LM Studio, llama.cpp)
+- Generate summaries using local LLMs (Ollama, LM Studio, llama.cpp) or cloud providers (OpenAI, Anthropic, OpenRouter)
+- **Mobile-compatible** with cloud LLM providers
 - Customizable templates with variable substitution
 - Flexible settings for metadata, naming, and error handling
 - Multiple entry points: command palette, ribbon icon, context menu
@@ -71,10 +72,19 @@ Control which metadata fields are included in your notes:
 ### LLM Configuration
 
 **Provider Selection:**
-- **LLM Provider**: Ollama, LM Studio, llama.cpp, or custom
-- **Auto-detect endpoint**: Automatically find available LLM server
-- **LLM Endpoint**: Custom endpoint URL for LLM
-- **Model name**: LLM model name to use (e.g., "llama2", "mistral")
+- **LLM Provider**: Choose from:
+  - **Local Providers**: Ollama, LM Studio, llama.cpp (desktop only)
+  - **Cloud Providers**: OpenAI, Anthropic, OpenRouter (works on mobile!)
+  - **Custom**: Configure your own endpoint
+- **Auto-detect endpoint**: Automatically find available local LLM server (local providers only)
+- **API Key**: Secure password-masked input for cloud providers
+- **LLM Endpoint**: API endpoint URL (auto-configured for cloud providers)
+- **Model name**: Model to use (e.g., "llama2", "gpt-4o-mini", "claude-3-5-haiku-20241022")
+
+**Cloud Provider Models:**
+- **OpenAI**: gpt-4o-mini (default), gpt-4o, gpt-3.5-turbo
+- **Anthropic**: claude-3-5-haiku-20241022 (default), claude-3-5-sonnet-20241022
+- **OpenRouter**: anthropic/claude-3.5-haiku (default), access to 100+ models
 
 **System Prompt:**
 - **Custom system prompt**: Customize the prompt sent to the LLM
@@ -168,14 +178,28 @@ tags: {{generated_tags}}
 ## Requirements
 
 - Obsidian v0.15.0 or higher
-- Local LLM server (optional but recommended for AI summaries)
-  - [Ollama](https://ollama.ai/)
-  - [LM Studio](https://lmstudio.ai/)
-  - [llama.cpp](https://github.com/ggerganov/llama.cpp)
+- For AI summaries, choose one:
+  - **Cloud LLMs** (works on mobile!): API key from OpenAI, Anthropic, or OpenRouter
+  - **Local LLMs** (desktop only):
+    - [Ollama](https://ollama.ai/)
+    - [LM Studio](https://lmstudio.ai/)
+    - [llama.cpp](https://github.com/ggerganov/llama.cpp)
+
+## Mobile Usage
+
+The plugin works on mobile devices using cloud LLM providers:
+
+1. Install the plugin on your mobile vault
+2. Open Settings > YouTube Transcript Extractor
+3. Select a cloud provider (OpenAI, Anthropic, or OpenRouter)
+4. Enter your API key
+5. Extract videos normally via the command palette or ribbon icon
+
+**Note**: Local LLM providers (Ollama, LM Studio, llama.cpp) are only available on desktop.
 
 ## Support
 
-- Report issues: [GitHub Issues](https://github.com/yourusername/ytextract/issues)
+- Report issues: [GitHub Issues](https://github.com/mwkloh/ytextract/issues)
 - Author: Michael Loh
 - Website: [https://www.e-maginaryarts.com](https://www.e-maginaryarts.com)
 
