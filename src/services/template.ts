@@ -115,16 +115,53 @@ duration: {{duration}}
   }
 
   /**
+   * Escape value for safe use in YAML frontmatter
+   */
+  private escapeYAMLValue(value: string): string {
+    // If value contains special YAML characters, wrap in quotes and escape internal quotes
+    if (value.includes('"') || value.includes("'") || value.includes(':') || value.includes('#')) {
+      // Use single quotes and escape any single quotes inside
+      return `'${value.replace(/'/g, "''")}'`;
+    }
+    return value;
+  }
+
+  /**
    * Replace template variables with actual data
    */
   private replaceVariables(template: string, data: TemplateData): string {
     let result = template;
 
-    for (const [key, value] of Object.entries(data)) {
-      const regex = new RegExp(`{{${key}}}`, 'g');
-      // Escape special regex characters in the replacement string
-      const safeValue = value.replace(/\$/g, '$$$$');
-      result = result.replace(regex, safeValue);
+    // Split template into frontmatter and body
+    const frontmatterMatch = result.match(/^---\n([\s\S]*?)\n---\n([\s\S]*)$/);
+
+    if (frontmatterMatch) {
+      let frontmatter = frontmatterMatch[1];
+      let body = frontmatterMatch[2];
+
+      // Replace variables in frontmatter with escaped values
+      for (const [key, value] of Object.entries(data)) {
+        const regex = new RegExp(`{{${key}}}`, 'g');
+        const escapedValue = this.escapeYAMLValue(value);
+        frontmatter = frontmatter.replace(regex, escapedValue);
+      }
+
+      // Replace variables in body (no escaping needed)
+      for (const [key, value] of Object.entries(data)) {
+        const regex = new RegExp(`{{${key}}}`, 'g');
+        // Escape special regex characters in the replacement string
+        const safeValue = value.replace(/\$/g, '$$$$');
+        body = body.replace(regex, safeValue);
+      }
+
+      result = `---\n${frontmatter}\n---\n${body}`;
+    } else {
+      // No frontmatter, just replace in body
+      for (const [key, value] of Object.entries(data)) {
+        const regex = new RegExp(`{{${key}}}`, 'g');
+        const safeValue = value.replace(/\$/g, '$$$$');
+        result = result.replace(regex, safeValue);
+      }
     }
 
     return result;
