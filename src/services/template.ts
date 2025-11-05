@@ -89,7 +89,7 @@ url: {{url}}
 channel: {{channel}}
 date: {{upload_date}}
 duration: {{duration}}
-tags: {{generated_tags}}
+tags: {{generated_tags_hashtags}}
 ---
 
 # {{title}}
