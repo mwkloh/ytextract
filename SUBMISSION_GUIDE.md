@@ -38,7 +38,7 @@ Edit `community-plugins.json` and add your plugin entry in **alphabetical order*
 
 ```json
 {
-  "id": "YTextract",
+  "id": "ytextract",
   "name": "YouTube Transcript Extractor",
   "author": "Michael Loh",
   "description": "Extract YouTube transcripts and generate AI-powered summaries using local or cloud LLMs",
@@ -47,7 +47,8 @@ Edit `community-plugins.json` and add your plugin entry in **alphabetical order*
 ```
 
 **Important Notes:**
-- The `id` must match exactly what's in your `manifest.json`
+
+- The `id` must match exactly what's in your `manifest.json` (must be lowercase)
 - The `repo` should be in format: `username/repository-name`
 - Ensure the entry is in alphabetical order by plugin name
 - Keep the description concise (under 250 characters)
@@ -76,9 +77,9 @@ Add YouTube Transcript Extractor plugin
 ## Plugin Information
 
 - **Plugin Name:** YouTube Transcript Extractor
-- **Plugin ID:** YTextract
+- **Plugin ID:** ytextract
 - **Repository:** https://github.com/mwkloh/ytextract
-- **Latest Release:** v1.3.1
+- **Latest Release:** 1.0.0
 - **Author:** Michael Loh
 
 ## Description
@@ -95,7 +96,7 @@ Extract YouTube video transcripts and generate AI-powered summaries using local 
 
 ## Release Assets
 
-The v1.3.1 release includes all required files:
+The 1.0.0 release includes all required files:
 - main.js
 - manifest.json
 - styles.css
@@ -209,10 +210,11 @@ Before submitting, verify:
 ## Current Status
 
 **Plugin Repository**: https://github.com/mwkloh/ytextract
-**Latest Release**: v1.3.1
-**Release URL**: https://github.com/mwkloh/ytextract/releases/tag/v1.3.1
+**Latest Release**: 1.0.0
+**Release URL**: https://github.com/mwkloh/ytextract/releases/tag/1.0.0
 
 ### Release Assets Available:
+
 - ✅ main.js (66KB)
 - ✅ manifest.json (347B)
 - ✅ styles.css (204B)
