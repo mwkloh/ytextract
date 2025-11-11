@@ -3,9 +3,10 @@
   "name": "YouTube Transcript Extractor",
   "version": "1.0.0",
   "minAppVersion": "0.15.0",
-  "description": "Extract YouTube transcripts and generate AI-powered summaries using local or cloud LLMs.",
+  "description": "Extract YouTube transcripts and generate AI-powered summaries using cloud or local LLMs.",
   "author": "Michael Loh",
   "authorUrl": "https://www.e-maginaryarts.com",
   "fundingUrl": "",
   "isDesktopOnly": false
 }
+
