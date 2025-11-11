@@ -14,7 +14,7 @@ export class StatusBarManager {
   show(message: string) {
     this.currentMessage = message;
     this.statusBarItem.setText(message);
-    this.statusBarItem.style.display = 'inline-block';
+    this.statusBarItem.show();
   }
 
   /**
@@ -30,7 +30,7 @@ export class StatusBarManager {
   clear() {
     this.currentMessage = '';
     this.statusBarItem.setText('');
-    this.statusBarItem.style.display = 'none';
+    this.statusBarItem.hide();
   }
 
   /**

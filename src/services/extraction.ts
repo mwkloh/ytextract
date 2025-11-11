@@ -2,7 +2,7 @@ import { App, Notice } from 'obsidian';
 import { YouTubeService } from './youtube';
 import { LLMService } from './llm';
 import { TemplateService } from './template';
-import { YTExtractSettings } from '../models/types';
+import { YTExtractSettings, YouTubeData, LLMResponse, TemplateData } from '../models/types';
 import { StatusBarManager } from '../ui/status-bar';
 
 export class ExtractionService {
@@ -37,7 +37,7 @@ export class ExtractionService {
       try {
         youtubeData = await this.youtubeService.extractVideoWithRetry(url);
       } catch (error) {
-        youtubeData = await this.handleYouTubeError(error as Error, url);
+        youtubeData = this.handleYouTubeError(error as Error, url);
       }
 
       // Step 2: Generate LLM summary
@@ -51,12 +51,12 @@ export class ExtractionService {
           : youtubeData.transcript;
 
         if (youtubeData.transcript.length > maxLLMLength) {
-          console.log(`Transcript truncated from ${youtubeData.transcript.length} to ${maxLLMLength} chars for LLM`);
+          console.debug(`Transcript truncated from ${youtubeData.transcript.length} to ${maxLLMLength} chars for LLM`);
         }
 
         llmResponse = await this.llmService.generateSummary(truncatedTranscript);
       } catch (error) {
-        llmResponse = await this.handleLLMError(error as Error);
+        llmResponse = this.handleLLMError(error as Error);
       }
 
       // Step 3: Process template
@@ -67,13 +67,13 @@ export class ExtractionService {
       try {
         content = await this.templateService.processTemplate(templateData);
       } catch (error) {
-        content = await this.handleTemplateError(error as Error, templateData);
+        content = this.handleTemplateError(error as Error, templateData);
       }
 
       // Step 4: Save file
       const filename = this.templateService.generateFilename(templateData);
       const filepath = this.templateService.getFilePath(filename);
-      const finalPath = await this.templateService.resolveFileNameConflict(filepath);
+      const finalPath = this.templateService.resolveFileNameConflict(filepath);
 
       await this.saveFile(finalPath, content);
 
@@ -89,7 +89,7 @@ export class ExtractionService {
   /**
    * Handle YouTube extraction errors based on settings
    */
-  private async handleYouTubeError(error: Error, url: string): Promise<any> {
+  private handleYouTubeError(error: Error, url: string): YouTubeData {
     const behavior = this.settings.errorBehavior;
 
     if (behavior === 'stop') {
@@ -120,7 +120,7 @@ export class ExtractionService {
    * Handle LLM errors based on settings
    * Returns empty response structure to allow pipeline to continue
    */
-  private async handleLLMError(error: Error): Promise<any> {
+  private handleLLMError(error: Error): LLMResponse {
     const behavior = this.settings.errorBehavior;
 
     // Log detailed error for debugging
@@ -158,7 +158,7 @@ export class ExtractionService {
    * Handle template processing errors
    * Returns simple fallback content
    */
-  private async handleTemplateError(error: Error, templateData: any): Promise<string> {
+  private handleTemplateError(error: Error, templateData: TemplateData): string {
     new Notice('Warning: Template error, using fallback');
 
     // Create simple fallback content

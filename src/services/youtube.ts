@@ -4,6 +4,25 @@ import { requestUrl } from 'obsidian';
 // Custom implementation using Obsidian's requestUrl API to avoid CORS issues
 // Both ytdl-core and youtube-transcript libraries don't work in Obsidian's sandboxed environment
 
+interface CaptionTrack {
+  languageCode: string;
+  baseUrl: string;
+}
+
+interface TranscriptSegmentRaw {
+  utf8?: string;
+}
+
+interface TranscriptEvent {
+  segs?: TranscriptSegmentRaw[];
+  tStartMs?: number;
+  dDurationMs?: number;
+}
+
+interface TranscriptData {
+  events?: TranscriptEvent[];
+}
+
 export class YouTubeService {
   /**
    * Extract video ID from various YouTube URL formats
@@ -81,7 +100,7 @@ export class YouTubeService {
     }
 
     // Find English captions
-    let captionTrack = captionTracks.find((track: any) =>
+    let captionTrack = captionTracks.find((track: CaptionTrack) =>
       track.languageCode === 'en' || track.languageCode.startsWith('en')
     );
 
@@ -142,7 +161,7 @@ export class YouTubeService {
   /**
    * Parse YouTube transcript JSON3 format
    */
-  private parseTranscriptJson(data: any): TranscriptSegment[] {
+  private parseTranscriptJson(data: TranscriptData): TranscriptSegment[] {
     const segments: TranscriptSegment[] = [];
 
     if (!data.events) {
@@ -160,7 +179,7 @@ export class YouTubeService {
 
       // Combine all segment texts
       const text = event.segs
-        .map((seg: any) => seg.utf8 || '')
+        .map((seg: TranscriptSegmentRaw) => seg.utf8 || '')
         .join('')
         .replace(/[\u200B-\u200D\uFEFF]/g, '') // Remove zero-width spaces
         .replace(/\s+/g, ' ') // Normalize whitespace

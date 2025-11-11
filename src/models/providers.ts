@@ -1,3 +1,4 @@
+import { requestUrl } from 'obsidian';
 import { LLMProvider, LLMResponse, YTExtractSettings } from './types';
 
 export abstract class BaseLLMProvider implements LLMProvider {
@@ -10,25 +11,34 @@ export abstract class BaseLLMProvider implements LLMProvider {
   abstract generateSummary(transcript: string, prompt: string): Promise<LLMResponse>;
 
   /**
-   * Make HTTP request with timeout
+   * Make HTTP request with timeout using Obsidian's requestUrl
    */
   protected async fetchWithTimeout(
     url: string,
-    options: RequestInit,
+    options: {
+      method?: string;
+      headers?: Record<string, string>;
+      body?: string;
+    },
     timeout: number
-  ): Promise<Response> {
-    const controller = new AbortController();
-    const id = setTimeout(() => controller.abort(), timeout);
-
+  ): Promise<{ ok: boolean; status: number; statusText: string; text: () => Promise<string>; json: () => Promise<unknown> }> {
     try {
-      const response = await fetch(url, {
-        ...options,
-        signal: controller.signal
+      const response = await requestUrl({
+        url,
+        method: options.method || 'GET',
+        headers: options.headers,
+        body: options.body,
+        throw: false
       });
-      clearTimeout(id);
-      return response;
+
+      return {
+        ok: response.status >= 200 && response.status < 300,
+        status: response.status,
+        statusText: '',
+        text: async () => response.text,
+        json: async () => response.json
+      };
     } catch (error) {
-      clearTimeout(id);
       throw error;
     }
   }
@@ -133,10 +143,10 @@ export class OllamaProvider extends BaseLLMProvider {
         throw new Error(`Ollama request failed: ${response.statusText}`);
       }
 
-      const data = await response.json();
+      const data = await response.json() as { response: string };
       return this.parseLLMOutput(data.response);
     } catch (error) {
-      throw new Error(`Ollama generation failed: ${error.message}`);
+      throw new Error(`Ollama generation failed: ${(error as Error).message}`);
     }
   }
 
@@ -215,7 +225,7 @@ export class LMStudioProvider extends BaseLLMProvider {
         throw new Error(`LM Studio request failed (${response.status}): ${response.statusText}. Details: ${errorText}`);
       }
 
-      const data = await response.json();
+      const data = await response.json() as { choices?: Array<{ message?: { content: string } }> };
 
       if (!data.choices || !data.choices[0] || !data.choices[0].message) {
         throw new Error(`LM Studio returned invalid response structure: ${JSON.stringify(data)}`);
@@ -227,10 +237,10 @@ export class LMStudioProvider extends BaseLLMProvider {
       console.error('LM Studio detailed error:', {
         endpoint,
         model: this.settings.llmModel,
-        error: error.message,
-        stack: error.stack
+        error: (error as Error).message,
+        stack: (error as Error).stack
       });
-      throw new Error(`LM Studio generation failed: ${error.message}`);
+      throw new Error(`LM Studio generation failed: ${(error as Error).message}`);
     }
   }
 
@@ -291,10 +301,10 @@ export class LlamaCppProvider extends BaseLLMProvider {
         throw new Error(`llama.cpp request failed: ${response.statusText}`);
       }
 
-      const data = await response.json();
+      const data = await response.json() as { content: string };
       return this.parseLLMOutput(data.content);
     } catch (error) {
-      throw new Error(`llama.cpp generation failed: ${error.message}`);
+      throw new Error(`llama.cpp generation failed: ${(error as Error).message}`);
     }
   }
 
@@ -370,7 +380,7 @@ export class OpenAIProvider extends BaseLLMProvider {
         throw new Error(`OpenAI request failed (${response.status}): ${response.statusText}. Details: ${errorText}`);
       }
 
-      const data = await response.json();
+      const data = await response.json() as { choices?: Array<{ message?: { content: string } }> };
 
       if (!data.choices || !data.choices[0] || !data.choices[0].message) {
         throw new Error(`OpenAI returned invalid response structure: ${JSON.stringify(data)}`);
@@ -379,7 +389,7 @@ export class OpenAIProvider extends BaseLLMProvider {
       const content = data.choices[0].message.content;
       return this.parseLLMOutput(content);
     } catch (error) {
-      throw new Error(`OpenAI generation failed: ${error.message}`);
+      throw new Error(`OpenAI generation failed: ${(error as Error).message}`);
     }
   }
 
@@ -450,7 +460,7 @@ export class AnthropicProvider extends BaseLLMProvider {
         throw new Error(`Anthropic request failed (${response.status}): ${response.statusText}. Details: ${errorText}`);
       }
 
-      const data = await response.json();
+      const data = await response.json() as { content?: Array<{ text: string }> };
 
       if (!data.content || !data.content[0] || !data.content[0].text) {
         throw new Error(`Anthropic returned invalid response structure: ${JSON.stringify(data)}`);
@@ -459,7 +469,7 @@ export class AnthropicProvider extends BaseLLMProvider {
       const content = data.content[0].text;
       return this.parseLLMOutput(content);
     } catch (error) {
-      throw new Error(`Anthropic generation failed: ${error.message}`);
+      throw new Error(`Anthropic generation failed: ${(error as Error).message}`);
     }
   }
 
@@ -537,7 +547,7 @@ export class OpenRouterProvider extends BaseLLMProvider {
         throw new Error(`OpenRouter request failed (${response.status}): ${response.statusText}. Details: ${errorText}`);
       }
 
-      const data = await response.json();
+      const data = await response.json() as { choices?: Array<{ message?: { content: string } }> };
 
       if (!data.choices || !data.choices[0] || !data.choices[0].message) {
         throw new Error(`OpenRouter returned invalid response structure: ${JSON.stringify(data)}`);
@@ -546,7 +556,7 @@ export class OpenRouterProvider extends BaseLLMProvider {
       const content = data.choices[0].message.content;
       return this.parseLLMOutput(content);
     } catch (error) {
-      throw new Error(`OpenRouter generation failed: ${error.message}`);
+      throw new Error(`OpenRouter generation failed: ${(error as Error).message}`);
     }
   }
 

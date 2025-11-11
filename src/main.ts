@@ -10,7 +10,7 @@ export default class YTExtractPlugin extends Plugin {
   statusBar: StatusBarManager;
 
   async onload() {
-    console.log('Loading YouTube Transcript Extractor plugin');
+    console.debug('Loading YouTube Transcript Extractor plugin');
 
     await this.loadSettings();
 
@@ -20,12 +20,12 @@ export default class YTExtractPlugin extends Plugin {
     // Add command palette command
     this.addCommand({
       id: 'extract-youtube-video',
-      name: 'Extract YouTube Video',
+      name: 'Extract YouTube video',
       callback: () => this.openURLModal()
     });
 
     // Add ribbon icon
-    this.addRibbonIcon('youtube', 'Extract YouTube Video', () => {
+    this.addRibbonIcon('youtube', 'Extract YouTube video', () => {
       this.openURLModal();
     });
 
@@ -36,7 +36,7 @@ export default class YTExtractPlugin extends Plugin {
         if (this.looksLikeYouTubeURL(selection)) {
           menu.addItem((item) => {
             item
-              .setTitle('Extract YouTube Video')
+              .setTitle('Extract YouTube video')
               .setIcon('youtube')
               .onClick(() => {
                 this.openURLModal(selection);
@@ -73,8 +73,8 @@ export default class YTExtractPlugin extends Plugin {
     }, prefilledUrl).open();
   }
 
-  async onunload() {
-    console.log('Unloading YouTube Transcript Extractor plugin');
+  onunload() {
+    console.debug('Unloading YouTube Transcript Extractor plugin');
   }
 
   async loadSettings() {

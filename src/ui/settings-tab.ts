@@ -1,4 +1,4 @@
-import { App, Notice, PluginSettingTab, Setting, TFile, TFolder } from 'obsidian';
+import { App, Notice, PluginSettingTab, Setting, TFile } from 'obsidian';
 import YTExtractPlugin from '../main';
 
 export class YTExtractSettingTab extends PluginSettingTab {
@@ -14,7 +14,7 @@ export class YTExtractSettingTab extends PluginSettingTab {
     const { containerEl } = this;
     containerEl.empty();
 
-    containerEl.createEl('h2', { text: 'YouTube Transcript Extractor Settings' });
+    new Setting(containerEl).setName('YouTube Transcript Extractor Settings').setHeading();
 
     this.addFileManagementSettings(containerEl);
     this.addMetadataSettings(containerEl);
@@ -23,7 +23,7 @@ export class YTExtractSettingTab extends PluginSettingTab {
   }
 
   private addFileManagementSettings(containerEl: HTMLElement): void {
-    containerEl.createEl('h3', { text: 'File Management' });
+    new Setting(containerEl).setName('File management').setHeading();
 
     new Setting(containerEl)
       .setName('Default folder')
@@ -72,7 +72,7 @@ export class YTExtractSettingTab extends PluginSettingTab {
   }
 
   private addMetadataSettings(containerEl: HTMLElement): void {
-    containerEl.createEl('h3', { text: 'Video Metadata Fields' });
+    new Setting(containerEl).setName('Video metadata fields').setHeading();
 
     new Setting(containerEl)
       .setName('Include upload date')
@@ -135,12 +135,10 @@ export class YTExtractSettingTab extends PluginSettingTab {
         }));
 
     // Template Generator subsection
-    containerEl.createEl('h4', { text: 'Template Generator' });
+    new Setting(containerEl).setName('Template generator').setHeading();
 
-    containerEl.createEl('p', {
-      text: 'If you don\'t generate a custom template, a default template will be used.',
-      cls: 'setting-item-description'
-    });
+    const desc = containerEl.createDiv({ cls: 'setting-item-description' });
+    desc.setText('If you don\'t generate a custom template, a default template will be used.');
 
     new Setting(containerEl)
       .setName('Template filename')
@@ -154,7 +152,7 @@ export class YTExtractSettingTab extends PluginSettingTab {
       );
 
     new Setting(containerEl)
-      .setName('Include Summary section')
+      .setName('Include summary section')
       .addToggle(toggle => toggle
         .setValue(this.plugin.settings.templateGeneratorSections.includeSummary)
         .onChange(async (value) => {
@@ -163,7 +161,7 @@ export class YTExtractSettingTab extends PluginSettingTab {
         }));
 
     new Setting(containerEl)
-      .setName('Include Key Points section')
+      .setName('Include key points section')
       .addToggle(toggle => toggle
         .setValue(this.plugin.settings.templateGeneratorSections.includeKeyPoints)
         .onChange(async (value) => {
@@ -172,7 +170,7 @@ export class YTExtractSettingTab extends PluginSettingTab {
         }));
 
     new Setting(containerEl)
-      .setName('Include Tags section')
+      .setName('Include tags section')
       .addToggle(toggle => toggle
         .setValue(this.plugin.settings.templateGeneratorSections.includeTags)
         .onChange(async (value) => {
@@ -181,7 +179,7 @@ export class YTExtractSettingTab extends PluginSettingTab {
         }));
 
     new Setting(containerEl)
-      .setName('Include Questions section')
+      .setName('Include questions section')
       .addToggle(toggle => toggle
         .setValue(this.plugin.settings.templateGeneratorSections.includeQuestions)
         .onChange(async (value) => {
@@ -190,7 +188,7 @@ export class YTExtractSettingTab extends PluginSettingTab {
         }));
 
     new Setting(containerEl)
-      .setName('Include Personal Notes section')
+      .setName('Include personal notes section')
       .addToggle(toggle => toggle
         .setValue(this.plugin.settings.templateGeneratorSections.includePersonalNotes)
         .onChange(async (value) => {
@@ -199,7 +197,7 @@ export class YTExtractSettingTab extends PluginSettingTab {
         }));
 
     new Setting(containerEl)
-      .setName('Include Transcript section')
+      .setName('Include transcript section')
       .addToggle(toggle => toggle
         .setValue(this.plugin.settings.templateGeneratorSections.includeTranscript)
         .onChange(async (value) => {
@@ -208,10 +206,10 @@ export class YTExtractSettingTab extends PluginSettingTab {
         }));
 
     new Setting(containerEl)
-      .setName('Generate Custom Template')
+      .setName('Generate custom template')
       .setDesc('Create a template file based on your selections')
       .addButton(button => button
-        .setButtonText('Generate Template')
+        .setButtonText('Generate template')
         .setCta()
         .onClick(async () => {
           // Validate filename
@@ -245,16 +243,16 @@ export class YTExtractSettingTab extends PluginSettingTab {
             new Notice(`Template created at ${filePath}. Now using this template for extractions.`);
           } catch (error) {
             console.error('Failed to create template:', error);
-            new Notice('Failed to create template file. Check console for details.');
+            new Notice('Failed to create template file.');
           }
         }));
   }
 
   private addLLMSettings(containerEl: HTMLElement): void {
-    containerEl.createEl('h3', { text: 'LLM Configuration' });
+    new Setting(containerEl).setName('LLM configuration').setHeading();
 
     new Setting(containerEl)
-      .setName('LLM Provider')
+      .setName('LLM provider')
       .setDesc('Select your LLM provider (cloud or local)')
       .addDropdown(dropdown => dropdown
         .addOption('ollama', 'Ollama (Local)')
@@ -266,7 +264,7 @@ export class YTExtractSettingTab extends PluginSettingTab {
         .addOption('custom', 'Custom')
         .setValue(this.plugin.settings.llmProvider)
         .onChange(async (value) => {
-          this.plugin.settings.llmProvider = value as any;
+          this.plugin.settings.llmProvider = value as 'ollama' | 'lmstudio' | 'llamacpp' | 'openai' | 'anthropic' | 'openrouter' | 'custom';
 
           // Update endpoint based on provider selection
           if (value === 'ollama') {
@@ -301,7 +299,7 @@ export class YTExtractSettingTab extends PluginSettingTab {
 
     if (isCloudProvider) {
       new Setting(containerEl)
-        .setName('API Key')
+        .setName('API key')
         .setDesc('Your API key for the cloud provider')
         .addText(text => {
           text
@@ -329,7 +327,7 @@ export class YTExtractSettingTab extends PluginSettingTab {
     }
 
     new Setting(containerEl)
-      .setName('LLM Endpoint')
+      .setName('LLM endpoint')
       .setDesc(isCloudProvider ? 'API endpoint URL (usually default is fine)' : 'Custom endpoint URL for local LLM')
       .addText(text => text
         .setPlaceholder(
@@ -361,10 +359,10 @@ export class YTExtractSettingTab extends PluginSettingTab {
         }));
 
     new Setting(containerEl)
-      .setName('Test Connection')
+      .setName('Test connection')
       .setDesc('Test connection to your LLM provider')
       .addButton(button => button
-        .setButtonText('Test Connection')
+        .setButtonText('Test connection')
         .setCta()
         .onClick(async () => {
           button.setButtonText('Testing...');
@@ -380,10 +378,10 @@ export class YTExtractSettingTab extends PluginSettingTab {
               new Notice('❌ Failed to connect to LLM provider. Check your settings.');
             }
           } catch (error) {
-            new Notice(`❌ Connection test failed: ${error.message}`);
+            new Notice(`❌ Connection test failed: ${(error as Error).message}`);
             console.error('LLM connection test error:', error);
           } finally {
-            button.setButtonText('Test Connection');
+            button.setButtonText('Test connection');
             button.setDisabled(false);
           }
         }));
@@ -415,7 +413,7 @@ export class YTExtractSettingTab extends PluginSettingTab {
   }
 
   private addErrorHandlingSettings(containerEl: HTMLElement): void {
-    containerEl.createEl('h3', { text: 'Error Handling' });
+    new Setting(containerEl).setName('Error handling').setHeading();
 
     new Setting(containerEl)
       .setName('Error behavior')
@@ -541,8 +539,7 @@ export class YTExtractSettingTab extends PluginSettingTab {
 
   private getTemplatesFolder(): string {
     // Try to get user's configured templates folder
-    const adapter = this.app.vault.adapter;
-    const config = (this.app.vault as any).config;
+    const config = (this.app.vault as { config?: { templatesFolder?: string } }).config;
 
     // Check if templates folder is configured
     if (config && config.templatesFolder) {

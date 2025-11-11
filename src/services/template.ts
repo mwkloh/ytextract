@@ -100,7 +100,7 @@ export class TemplateService {
   /**
    * Load default template
    */
-  private async loadDefaultTemplate(): Promise<string> {
+  private loadDefaultTemplate(): string {
     return `---
 title: {{title}}
 url: {{url}}
@@ -238,7 +238,7 @@ duration: {{duration}}
   /**
    * Handle file name conflicts
    */
-  async resolveFileNameConflict(path: string): Promise<string> {
+  resolveFileNameConflict(path: string): string {
     const file = this.app.vault.getAbstractFileByPath(path);
 
     if (!file) {
