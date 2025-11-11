@@ -165,14 +165,17 @@ duration: {{duration}}
 
     const formattedTags = tags
       .map(tag => {
-        // Remove special characters and convert to single word
-        return tag
+        // Clean up the tag but preserve multi-word structure
+        const cleaned = tag
           .toLowerCase()
-          .replace(/[^\w\s-]/g, '') // Remove special chars except spaces and hyphens
-          .replace(/\s+/g, '-')      // Replace spaces with hyphens
-          .replace(/^-+|-+$/g, '');  // Remove leading/trailing hyphens
+          .replace(/[^\w\s]/g, '')  // Remove special chars except spaces
+          .replace(/\s+/g, ' ')      // Normalize spaces
+          .trim();
+
+        // If tag has spaces, wrap in quotes for YAML
+        return cleaned.includes(' ') ? `"${cleaned}"` : cleaned;
       })
-      .filter(tag => tag.length > 0);
+      .filter(tag => tag.length > 0 && tag !== '""');
 
     // Format as YAML array for frontmatter
     return '\n' + formattedTags.map(tag => `  - ${tag}`).join('\n');
@@ -186,15 +189,23 @@ duration: {{duration}}
 
     return tags
       .map(tag => {
-        // Remove special characters and convert to single word
-        const singleWord = tag
+        // Clean up the tag and convert to camelCase for hashtags
+        const words = tag
           .toLowerCase()
-          .replace(/[^\w\s-]/g, '') // Remove special chars except spaces and hyphens
-          .replace(/\s+/g, '-')      // Replace spaces with hyphens
-          .replace(/^-+|-+$/g, '');  // Remove leading/trailing hyphens
+          .replace(/[^\w\s]/g, '')  // Remove special chars except spaces
+          .trim()
+          .split(/\s+/);
 
-        return `#${singleWord}`;
+        // Convert to camelCase: first word lowercase, rest capitalized
+        const camelCase = words
+          .map((word, index) =>
+            index === 0 ? word : word.charAt(0).toUpperCase() + word.slice(1)
+          )
+          .join('');
+
+        return `#${camelCase}`;
       })
+      .filter(tag => tag !== '#')
       .join(' ');
   }
 

@@ -93,7 +93,7 @@ export abstract class BaseLLMProvider implements LLMProvider {
     // Otherwise treat as bullet list (one per line)
     return content
       .split('\n')
-      .map(line => line.replace(/^[-*•]\s*/, '').trim())
+      .map(line => line.replace(/^[-*•]\s*/, '').replace(/^\d+\.\s*/, '').trim())
       .filter(line => line.length > 0);
   }
 }
