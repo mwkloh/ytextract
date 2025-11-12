@@ -23,7 +23,7 @@ export class URLInputModal extends Modal {
 
     new Setting(contentEl)
       .setName('YouTube url')
-      .setDesc('Enter the YouTube video url')
+      .setDesc('Enter the YouTube video URL')
       .addText(text => {
         text
           .setPlaceholder('https://www.youtube.com/watch?v=...')
