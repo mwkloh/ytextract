@@ -113,8 +113,8 @@ export class YTExtractSettingTab extends PluginSettingTab {
         }));
 
     new Setting(containerEl)
-      .setName('Include channel URL')
-      .setDesc('Include channel URL in template')
+      .setName('Include channel url')
+      .setDesc('Include channel url in template')
       .addToggle(toggle => toggle
         .setValue(this.plugin.settings.includeChannelUrl)
         .onChange(async (value) => {
@@ -123,8 +123,8 @@ export class YTExtractSettingTab extends PluginSettingTab {
         }));
 
     new Setting(containerEl)
-      .setName('Include thumbnail URL')
-      .setDesc('Include video thumbnail URL in template')
+      .setName('Include thumbnail url')
+      .setDesc('Include video thumbnail url in template')
       .addToggle(toggle => toggle
         .setValue(this.plugin.settings.includeThumbnailUrl)
         .onChange(async (value) => {
@@ -251,7 +251,7 @@ export class YTExtractSettingTab extends PluginSettingTab {
 
     new Setting(containerEl)
       .setName('LLM provider')
-      .setDesc('Select your LLM provider (cloud or local)')
+      .setDesc('Select your llm provider (cloud or local)')
       .addDropdown(dropdown => dropdown
         .addOption('ollama', 'Ollama (local)')
         .addOption('lmstudio', 'LM Studio (local)')
@@ -297,8 +297,8 @@ export class YTExtractSettingTab extends PluginSettingTab {
 
     if (isCloudProvider) {
       new Setting(containerEl)
-        .setName('API key')
-        .setDesc('Your API key for the cloud provider')
+        .setName('Api key')
+        .setDesc('Your api key for the cloud provider')
         .addText(text => {
           text
             .setPlaceholder('Enter your API key')
@@ -315,7 +315,7 @@ export class YTExtractSettingTab extends PluginSettingTab {
     if (!isCloudProvider) {
       new Setting(containerEl)
         .setName('Auto-detect endpoint')
-        .setDesc('Automatically detect LLM endpoint')
+        .setDesc('Automatically detect llm endpoint')
         .addToggle(toggle => toggle
           .setValue(this.plugin.settings.autoDetectEndpoint)
           .onChange(async (value) => {
@@ -326,7 +326,7 @@ export class YTExtractSettingTab extends PluginSettingTab {
 
     new Setting(containerEl)
       .setName('LLM endpoint')
-      .setDesc(isCloudProvider ? 'API endpoint URL (usually default is fine)' : 'Custom endpoint URL for local LLM')
+      .setDesc(isCloudProvider ? 'Api endpoint url (usually default is fine)' : 'Custom endpoint url for local llm')
       .addText(text => text
         .setPlaceholder(
           this.plugin.settings.llmProvider === 'openai' ? 'https://api.openai.com/v1/chat/completions' :
@@ -358,7 +358,7 @@ export class YTExtractSettingTab extends PluginSettingTab {
 
     new Setting(containerEl)
       .setName('Test connection')
-      .setDesc('Test connection to your LLM provider')
+      .setDesc('Test connection to your llm provider')
       .addButton(button => button
         .setButtonText('Test connection')
         .setCta()
@@ -386,7 +386,7 @@ export class YTExtractSettingTab extends PluginSettingTab {
 
     new Setting(containerEl)
       .setName('Custom system prompt')
-      .setDesc('Customize the prompt sent to the LLM')
+      .setDesc('Customize the prompt sent to the llm')
       .addTextArea(text => text
         .setPlaceholder('Summarize the following transcript...')
         .setValue(this.plugin.settings.customSystemPrompt)
@@ -397,7 +397,7 @@ export class YTExtractSettingTab extends PluginSettingTab {
 
     new Setting(containerEl)
       .setName('Request timeout (ms)')
-      .setDesc('Timeout for LLM requests in milliseconds')
+      .setDesc('Timeout for llm requests in milliseconds')
       .addText(text => text
         .setPlaceholder('30000')
         .setValue(String(this.plugin.settings.requestTimeout))

@@ -69,7 +69,7 @@ export default class YTExtractPlugin extends Plugin {
         this.settings,
         this.statusBar
       );
-      extractionService.extract(url);
+      void extractionService.extract(url);
     }, prefilledUrl).open();
   }
 

@@ -22,8 +22,8 @@ export class URLInputModal extends Modal {
     contentEl.createEl('h2', { text: 'Extract YouTube Video' });
 
     new Setting(contentEl)
-      .setName('YouTube URL')
-      .setDesc('Enter the YouTube video URL')
+      .setName('YouTube url')
+      .setDesc('Enter the YouTube video url')
       .addText(text => {
         text
           .setPlaceholder('https://www.youtube.com/watch?v=...')
