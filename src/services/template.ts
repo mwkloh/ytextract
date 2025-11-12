@@ -78,7 +78,7 @@ export class TemplateService {
     if (this.settings.templatePath) {
       template = await this.loadCustomTemplate();
     } else {
-      template = await this.loadDefaultTemplate();
+      template = this.loadDefaultTemplate();
     }
 
     return this.replaceVariables(template, data);

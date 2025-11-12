@@ -22,25 +22,21 @@ export abstract class BaseLLMProvider implements LLMProvider {
     },
     timeout: number
   ): Promise<{ ok: boolean; status: number; statusText: string; text: () => Promise<string>; json: () => Promise<unknown> }> {
-    try {
-      const response = await requestUrl({
-        url,
-        method: options.method || 'GET',
-        headers: options.headers,
-        body: options.body,
-        throw: false
-      });
+    const response = await requestUrl({
+      url,
+      method: options.method || 'GET',
+      headers: options.headers,
+      body: options.body,
+      throw: false
+    });
 
-      return {
-        ok: response.status >= 200 && response.status < 300,
-        status: response.status,
-        statusText: '',
-        text: async () => response.text,
-        json: async () => response.json
-      };
-    } catch (error) {
-      throw error;
-    }
+    return {
+      ok: response.status >= 200 && response.status < 300,
+      status: response.status,
+      statusText: '',
+      text: () => Promise.resolve(response.text),
+      json: () => Promise.resolve(response.json)
+    };
   }
 
   /**
@@ -408,7 +404,7 @@ export class AnthropicProvider extends BaseLLMProvider {
   name = 'Anthropic';
   defaultEndpoint = 'https://api.anthropic.com/v1/messages';
 
-  async testConnection(): Promise<boolean> {
+  testConnection(): Promise<boolean> {
     try {
       if (!this.settings.llmApiKey) {
         throw new Error('API key is required');
@@ -416,9 +412,9 @@ export class AnthropicProvider extends BaseLLMProvider {
 
       // Anthropic doesn't have a simple health check endpoint
       // We'll just validate that the API key is present
-      return this.settings.llmApiKey.startsWith('sk-ant-');
+      return Promise.resolve(this.settings.llmApiKey.startsWith('sk-ant-'));
     } catch {
-      return false;
+      return Promise.resolve(false);
     }
   }
 

@@ -280,7 +280,7 @@ export class YouTubeService {
         channelUrl: `https://www.youtube.com/channel/${videoId}`,
         thumbnailUrl: `https://i.ytimg.com/vi/${videoId}/maxresdefault.jpg`
       };
-    } catch (error) {
+    } catch {
       // Fallback to minimal metadata if parsing fails
       const url = `https://www.youtube.com/watch?v=${videoId}`;
       return {

@@ -14,8 +14,6 @@ export class YTExtractSettingTab extends PluginSettingTab {
     const { containerEl } = this;
     containerEl.empty();
 
-    new Setting(containerEl).setName('YouTube Transcript Extractor Settings').setHeading();
-
     this.addFileManagementSettings(containerEl);
     this.addMetadataSettings(containerEl);
     this.addLLMSettings(containerEl);
@@ -255,12 +253,12 @@ export class YTExtractSettingTab extends PluginSettingTab {
       .setName('LLM provider')
       .setDesc('Select your LLM provider (cloud or local)')
       .addDropdown(dropdown => dropdown
-        .addOption('ollama', 'Ollama (Local)')
-        .addOption('lmstudio', 'LM Studio (Local)')
-        .addOption('llamacpp', 'llama.cpp (Local)')
-        .addOption('openai', 'OpenAI (Cloud)')
-        .addOption('anthropic', 'Anthropic (Cloud)')
-        .addOption('openrouter', 'OpenRouter (Cloud)')
+        .addOption('ollama', 'Ollama (local)')
+        .addOption('lmstudio', 'LM Studio (local)')
+        .addOption('llamacpp', 'llama.cpp (local)')
+        .addOption('openai', 'OpenAI (cloud)')
+        .addOption('anthropic', 'Anthropic (cloud)')
+        .addOption('openrouter', 'OpenRouter (cloud)')
         .addOption('custom', 'Custom')
         .setValue(this.plugin.settings.llmProvider)
         .onChange(async (value) => {

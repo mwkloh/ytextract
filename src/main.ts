@@ -63,13 +63,13 @@ export default class YTExtractPlugin extends Plugin {
   }
 
   openURLModal(prefilledUrl?: string) {
-    new URLInputModal(this.app, async (url: string) => {
+    new URLInputModal(this.app, (url: string) => {
       const extractionService = new ExtractionService(
         this.app,
         this.settings,
         this.statusBar
       );
-      await extractionService.extract(url);
+      extractionService.extract(url);
     }, prefilledUrl).open();
   }
 
