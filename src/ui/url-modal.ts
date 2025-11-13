@@ -19,10 +19,10 @@ export class URLInputModal extends Modal {
     const { contentEl } = this;
     contentEl.empty();
 
-    contentEl.createEl('h2', { text: 'Extract YouTube Video' });
+    contentEl.createEl('h2', { text: 'Extract YouTube video' });
 
     new Setting(contentEl)
-      .setName('YouTube url')
+      .setName('YouTube URL')
       .setDesc('Enter the YouTube video URL')
       .addText(text => {
         text

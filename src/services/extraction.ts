@@ -159,7 +159,7 @@ export class ExtractionService {
    * Returns simple fallback content
    */
   private handleTemplateError(error: Error, templateData: TemplateData): string {
-    new Notice('Warning: Template error, using fallback');
+    new Notice('Warning: template error, using fallback');
 
     // Create simple fallback content
     return `# ${templateData.title}

@@ -113,7 +113,7 @@ export class YTExtractSettingTab extends PluginSettingTab {
         }));
 
     new Setting(containerEl)
-      .setName('Include channel url')
+      .setName('Include channel URL')
       .setDesc('Include channel URL in template')
       .addToggle(toggle => toggle
         .setValue(this.plugin.settings.includeChannelUrl)
@@ -123,7 +123,7 @@ export class YTExtractSettingTab extends PluginSettingTab {
         }));
 
     new Setting(containerEl)
-      .setName('Include thumbnail url')
+      .setName('Include thumbnail URL')
       .setDesc('Include video thumbnail URL in template')
       .addToggle(toggle => toggle
         .setValue(this.plugin.settings.includeThumbnailUrl)
@@ -142,7 +142,7 @@ export class YTExtractSettingTab extends PluginSettingTab {
       .setName('Template filename')
       .setDesc('Enter template filename (without .md)')
       .addText(text => text
-        .setPlaceholder('youtube-template')
+        .setPlaceholder('YouTube-template')
         .setValue(this.templateFilename)
         .onChange((value) => {
           this.templateFilename = value;
@@ -254,8 +254,8 @@ export class YTExtractSettingTab extends PluginSettingTab {
       .setDesc('Select your LLM provider (cloud or local)')
       .addDropdown(dropdown => dropdown
         .addOption('ollama', 'Ollama (local)')
-        .addOption('lmstudio', 'LM Studio (local)')
-        .addOption('llamacpp', 'llama.cpp (local)')
+        .addOption('lmstudio', 'Lm studio (local)')
+        .addOption('llamacpp', 'Llama.cpp (local)')
         .addOption('openai', 'OpenAI (cloud)')
         .addOption('anthropic', 'Anthropic (cloud)')
         .addOption('openrouter', 'OpenRouter (cloud)')
@@ -297,7 +297,7 @@ export class YTExtractSettingTab extends PluginSettingTab {
 
     if (isCloudProvider) {
       new Setting(containerEl)
-        .setName('Api key')
+        .setName('API key')
         .setDesc('Your API key for the cloud provider')
         .addText(text => {
           text
@@ -371,9 +371,9 @@ export class YTExtractSettingTab extends PluginSettingTab {
             const isConnected = await llmService.testConnection();
 
             if (isConnected) {
-              new Notice('✅ Successfully connected to LLM provider!');
+              new Notice('✅ successfully connected to LLM provider!');
             } else {
-              new Notice('❌ Failed to connect to LLM provider. Check your settings.');
+              new Notice('❌ failed to connect to LLM provider. Check your settings.');
             }
           } catch (error) {
             new Notice(`❌ Connection test failed: ${(error as Error).message}`);
